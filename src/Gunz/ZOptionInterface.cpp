@@ -34,33 +34,6 @@ bool operator == ( D3DDISPLAYMODE lhs, D3DDISPLAYMODE rhs )
 static int widths[]={ 640,800,1024,1280,1600 };
 static int heights[]={ 480,600,768,960,1200 };
 
-// ---------------------------------------------------------------------------
-// EGunZ UI scaling
-// The interface XML is authored for an 800x600 screen. Instead of stretching it
-// independently on each axis (which squashes everything on 16:9 / 4K), scale it
-// uniformly by the limiting axis and centre the 800x600 area horizontally.
-// ---------------------------------------------------------------------------
-static float EGZ_UIScaleFor(int w, int h)
-{
-	if (w <= 0 || h <= 0) return 1.0f;
-	const float sx = w / 800.0f;
-	const float sy = h / 600.0f;
-	return sx < sy ? sx : sy;
-}
-static float EGZ_GetUIScale() { return EGZ_UIScaleFor(RGetScreenWidth(), RGetScreenHeight()); }
-static int EGZ_GetUIOffsetX() { return (int)((RGetScreenWidth() - 800.0f * EGZ_GetUIScale()) * 0.5f); }
-static void EGZ_CenterUIRoot(MWidget* pWidget)
-{
-	if (!pWidget) return;
-	const MRECT idl = pWidget->GetIDLRect();
-	if (idl.w > 0 && idl.h > 0)
-	{
-		const MRECT r = pWidget->GetRect();
-		pWidget->SetPosition(r.x + EGZ_GetUIOffsetX(), r.y);
-	}
-}
-#define EGZ_RESIZE_UI_ROOT(pW, w, h) do { ResizeWidgetRecursive(pW, w, h); EGZ_CenterUIRoot(pW); } while (0)
-
 
 ZOptionInterface::ZOptionInterface(void)
 {
@@ -1332,8 +1305,8 @@ bool ZOptionInterface::ResizeWidgetRecursive( MWidget* pWidget, int w, int h)
 	if(pWidget->GetIDLRect().w>0 && pWidget->GetIDLRect().h>0)	
 	{
 		// idl 에서는 800x600 기준으로 기술되어있다
-		const float tempWidth = EGZ_GetUIScale();
-		const float tempHeight = tempWidth;
+		const float tempWidth = ((float)RGetScreenWidth()) / 800;
+		const float tempHeight = ((float)RGetScreenHeight()) / 600;
 
 		MRECT r=pWidget->GetIDLRect();
 		r.x*=tempWidth;
@@ -1344,8 +1317,8 @@ bool ZOptionInterface::ResizeWidgetRecursive( MWidget* pWidget, int w, int h)
 	}
 	else 
 	{
-		const float tempWidth = EGZ_GetUIScale() / EGZ_UIScaleFor(mOldScreenWidth, mOldScreenHeight);
-		const float tempHeight = tempWidth;
+		const float tempWidth = ((float)RGetScreenWidth()) / mOldScreenWidth;
+		const float tempHeight = ((float)RGetScreenHeight()) / mOldScreenHeight;
 		MPOINT p = pWidget->GetPosition();
 		p.Scale( tempWidth, tempHeight );
 		pWidget->SetPosition( p );
@@ -1387,7 +1360,6 @@ bool ZOptionInterface::ResizeWidget(const char* szName, int w, int h)
 		pWidget = pResource->FindWidget( "LoginFrame");
 		if ( pWidget)
 		{
-			ResizeWidgetRecursive( pWidget, w, h );
 			MRECT rect;
 			rect = pWidget->GetRect();
 
@@ -1415,7 +1387,7 @@ bool ZOptionInterface::ResizeWidget(const char* szName, int w, int h)
 	if( _stricmp( szName, "Shop") == 0)
 	{
 		// Resize frame
-		EGZ_RESIZE_UI_ROOT(pWidget, w, h);
+		ResizeWidgetRecursive( pWidget, w, h);
 
 		// Resize components
 		/*
@@ -1453,7 +1425,7 @@ bool ZOptionInterface::ResizeWidget(const char* szName, int w, int h)
 		MListBox* pListBox3 = (MListBox*)pResource->FindWidget( "CashEquipmentList" );
 
 		MPicture* pPicture = (MPicture*)pResource->FindWidget( "Shop_ListLabel" );
-		float flSize = EGZ_GetUIScale();
+		float flSize = (float)RGetScreenWidth() / 800.0f;
 
 		if ( pPicture)
 		{
@@ -1491,13 +1463,13 @@ bool ZOptionInterface::ResizeWidget(const char* szName, int w, int h)
 	else if ( _stricmp( szName, "Equipment") == 0 )
 	{
 		// Resize frame
-		EGZ_RESIZE_UI_ROOT(pWidget, w, h);
+		ResizeWidgetRecursive( pWidget, w, h);
 
 		// Resize components
 		MListBox* pListBox;
 		MRECT     rectList;
 		int cField, nFieldSize[] = { 32, 160, 35, 45};
-		float flSize = EGZ_GetUIScale();
+		float flSize = (float)RGetScreenWidth() / 800.0f;
 
 		pListBox = (MListBox*)pResource->FindWidget( "EquipmentList");
 		for ( cField = 0; cField < pListBox->GetFieldCount(); cField++)
@@ -1542,7 +1514,7 @@ bool ZOptionInterface::ResizeWidget(const char* szName, int w, int h)
 	}
 	else if( _stricmp( szName, "Stage" )== 0 )
 	{
-		EGZ_RESIZE_UI_ROOT(pWidget, w, h);
+		ResizeWidgetRecursive(pWidget, w, h);
 
 		ZApplication::GetStageInterface()->GetSacrificeItemBoxPos();
 
@@ -1550,14 +1522,14 @@ bool ZOptionInterface::ResizeWidget(const char* szName, int w, int h)
 	}
 	else if(_stricmp( szName, "Lobby" )==0)
 	{
-		EGZ_RESIZE_UI_ROOT(pWidget, w, h);
+		ResizeWidgetRecursive( pWidget, w, h );
 		ZRoomListBox* pRoomList;
 
 		pRoomList = (ZRoomListBox*)pResource->FindWidget( "Lobby_StageList" );
 		if( pRoomList != 0 )
 		{
-			const float tempWidth = EGZ_GetUIScale() / EGZ_UIScaleFor(mOldScreenWidth, mOldScreenHeight);
-			const float tempHeight = tempWidth;
+			const float tempWidth = ((float)RGetScreenWidth()) / mOldScreenWidth;
+			const float tempHeight = ((float)RGetScreenHeight()) / mOldScreenHeight;
 			pRoomList->Resize( tempWidth, tempHeight );
 		}
 
@@ -1565,32 +1537,25 @@ bool ZOptionInterface::ResizeWidget(const char* szName, int w, int h)
 	}
 	else if(_stricmp( szName, "CharSelection")==0)
 	{
-		EGZ_RESIZE_UI_ROOT(pWidget, w, h);
+		ResizeWidgetRecursive( pWidget, w, h );
 	}
 
 	else if(_stricmp( szName, "CharCreation")==0)
 	{
-		ResizeWidgetRecursive( pWidget, w, h );
 		MRECT rect;
 		rect = pWidget->GetRect();
-		rect.x = (int)(50 * EGZ_GetUIScale()) + EGZ_GetUIOffsetX();
+		rect.x = 50 * ( RGetScreenWidth() / 800.0f);
 		rect.y = (int)((RGetScreenHeight() - rect.h) / 2.0f);
 		pWidget->SetBounds( rect);
 
 		return true;
 	}
 	else if(_stricmp( szName, "GameResult")==0)
-		EGZ_RESIZE_UI_ROOT(pWidget, w, h);
+		ResizeWidgetRecursive( pWidget, w, h );
 	else if(_stricmp( szName, "MonsterBook")==0)
-		EGZ_RESIZE_UI_ROOT(pWidget, w, h);
+		ResizeWidgetRecursive( pWidget, w, h );
 	else if(_stricmp( szName, "CombatTDMInfo")==0)
-		EGZ_RESIZE_UI_ROOT(pWidget, w, h);
-	else if(_stricmp( szName, "Option")==0)
-	{
-		MWidget* pOptionGroup = pResource->FindWidget("OptionGroup");
-		if (pOptionGroup)
-			ResizeWidgetRecursive(pOptionGroup, w, h);
-	}
+		ResizeWidgetRecursive( pWidget, w, h );
 
 	pWidget->SetSize(w, h);
 	return true;

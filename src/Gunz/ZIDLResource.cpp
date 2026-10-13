@@ -762,25 +762,11 @@ MFrame*	ZIDLResource::CreateFrame(const char* szName, MWidget* pParent, MListene
 	return pFrame;
 }
 
-// Fonts are authored for an 800x600 UI. Scale their pixel height by the same
-// uniform factor the layout uses (see ZOptionInterface) so text stays crisp and
-// proportional on 16:9 / 4K screens. Never shrink below the authored size.
-static int EGZ_ScaleFontHeight(int nHeight)
-{
-	const int w = RGetScreenWidth();
-	const int h = RGetScreenHeight();
-	if (w <= 0 || h <= 0 || nHeight <= 0) return nHeight;
-	float s = (w / 800.0f < h / 600.0f) ? (w / 800.0f) : (h / 600.0f);
-	if (s < 1.0f) s = 1.0f;
-	if (s > 4.0f) s = 4.0f;
-	return (int)(nHeight * s + 0.5f);
-}
-
 MFont* ZIDLResource::CreateFont(char* szAliasName, char* szFontName, int nHeight, 
 								bool bBold, bool bItalic, int nOutlineStyle, bool bAntialiasing, DWORD nColorArg1, DWORD nColorArg2)
 {
 	MFontR2* pNew = new MFontR2;
-	pNew->Create(szAliasName, szFontName, EGZ_ScaleFontHeight(nHeight), 1.0f, bBold, bItalic, nOutlineStyle, -1, bAntialiasing, nColorArg1, nColorArg2);
+	pNew->Create(szAliasName, szFontName, nHeight, 1.0f, bBold, bItalic, nOutlineStyle, -1, bAntialiasing, nColorArg1, nColorArg2);
 	return pNew;
 }
 
