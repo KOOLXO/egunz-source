@@ -74,6 +74,19 @@ endif()
 add_target(NAME Gunz TYPE EXECUTABLE SOURCES "${main_file};${CMAKE_CURRENT_SOURCE_DIR}/Gunz.rc")
 set_target_properties(Gunz PROPERTIES COMPILE_DEFINITIONS BUILDER_STATIC_DEFINE)
 target_link_libraries(Gunz PUBLIC Gunz_lib)
+# EGunZ: without WIN32_EXECUTABLE, CMake appends /subsystem:console after the
+# /SUBSYSTEM:WINDOWS above (Ninja generator), so the exe got mainCRTStartup and
+# WinMain/GunzMain never ran (exit code 1). This makes it a real GUI executable.
+set_target_properties(Gunz PROPERTIES WIN32_EXECUTABLE TRUE)
+
+# EGunZ: after a build, drop the fresh Gunz.exe into the runnable client folder.
+# EGUNZ_CLIENT_DIR comes from CMakePresets.json; leave it empty to disable.
+# (Close the game before building, or Windows refuses to overwrite the running exe.)
+if (EGUNZ_CLIENT_DIR)
+	add_custom_command(TARGET Gunz POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Gunz>" "${EGUNZ_CLIENT_DIR}/"
+		COMMENT "EGunZ: deploying Gunz.exe to ${EGUNZ_CLIENT_DIR}")
+endif()
 
 install(
 	TARGETS Gunz RUNTIME 

@@ -1,0 +1,65 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "x86-release",
+      "displayName": "x86 Release (EGunZ)",
+      "description": "Win32 Release build driven from Visual Studio's Open Folder / CMake integration. Mirrors build-win32-VS2022.bat but uses the vendored sdk/zlib, and deploys Gunz.exe / MatchServer.exe into ../../ogz-client and ../../ogz-server after each build.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../build/x86-release",
+      "installDir": "${sourceDir}/../install",
+      "architecture": {
+        "value": "x86",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_POLICY_VERSION_MINIMUM": "3.5",
+        "BUILD_SHARED_LIBS": "OFF",
+        "ZLIB_LIBRARY": "${sourceDir}/sdk/zlib/lib/zlib.lib",
+        "ZLIB_INCLUDE_DIR": "${sourceDir}/sdk/zlib/include",
+        "EGUNZ_CLIENT_DIR": "${sourceDir}/../../ogz-client",
+        "EGUNZ_SERVER_DIR": "${sourceDir}/../../ogz-server"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [
+            "Windows"
+          ],
+          "intelliSenseMode": "windows-msvc-x86"
+        }
+      }
+    },
+    {
+      "name": "x86-relwithdebinfo",
+      "displayName": "x86 RelWithDebInfo (EGunZ)",
+      "inherits": "x86-release",
+      "binaryDir": "${sourceDir}/../build/x86-relwithdebinfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "x86-release",
+      "configurePreset": "x86-release"
+    },
+    {
+      "name": "x86-release-install",
+      "configurePreset": "x86-release",
+      "targets": [
+        "install"
+      ]
+    },
+    {
+      "name": "x86-relwithdebinfo",
+      "configurePreset": "x86-relwithdebinfo"
+    }
+  ]
+}

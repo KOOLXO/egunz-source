@@ -49,6 +49,15 @@ endif()
 add_target(NAME MatchServer TYPE EXECUTABLE SOURCES "${main_file}")
 target_link_libraries(MatchServer PUBLIC MatchServer_lib)
 
+# EGunZ: after a build, drop the fresh MatchServer.exe into the runnable server folder.
+# EGUNZ_SERVER_DIR comes from CMakePresets.json; leave it empty to disable.
+# (Stop the server before building, or Windows refuses to overwrite the running exe.)
+if (EGUNZ_SERVER_DIR)
+	add_custom_command(TARGET MatchServer POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:MatchServer>" "${EGUNZ_SERVER_DIR}/"
+		COMMENT "EGunZ: deploying MatchServer.exe to ${EGUNZ_SERVER_DIR}")
+endif()
+
 install(
 	TARGETS MatchServer RUNTIME 
 	DESTINATION "server/"

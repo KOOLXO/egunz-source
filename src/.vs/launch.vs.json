@@ -1,0 +1,22 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Gunz.exe (bin\\Gunz.exe)",
+      "name": "EGunZ client (Gunz.exe from ogz-client)",
+      "exe": "C:\\egunz-dev\\ogz\\ogz-client\\Gunz.exe",
+      "currentDir": "C:\\egunz-dev\\ogz\\ogz-client"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "MatchServer.exe (bin\\MatchServer.exe)",
+      "name": "EGunZ server (MatchServer.exe from ogz-server)",
+      "exe": "C:\\egunz-dev\\ogz\\ogz-server\\MatchServer.exe",
+      "currentDir": "C:\\egunz-dev\\ogz\\ogz-server"
+    }
+  ]
+}

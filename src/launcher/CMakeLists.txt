@@ -20,6 +20,7 @@ target_link_libraries(launcher_lib PUBLIC msvcrt.lib msvcmrt.lib cml curl sodium
 
 if (WIN32)
 	add_target(NAME launcher TYPE EXECUTABLE SOURCES "${main_file}" "${imgui_impl_dx9}")
+	set_target_properties(launcher PROPERTIES WIN32_EXECUTABLE TRUE) # EGunZ: GUI subsystem under Ninja
 	target_link_libraries(launcher PUBLIC launcher_lib imgui)
 
 	if(MSVC)

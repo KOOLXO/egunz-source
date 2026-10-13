@@ -10,7 +10,7 @@
 # The documentation can be found at the library's page:
 # https://github.com/onqtam/ucm
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5) # EGunZ: was 2.8.12; CMake 4.x refuses < 3.5 (cotire re-runs this in script mode at build time)
 
 include(CMakeParseArguments)
 
