@@ -77,6 +77,9 @@ public:
 	void CustomCheckEventObj(const u32 dwEventID, MMatchObject* pObj, void* pContext);
 
 	MLadderMgr*	GetLadderMgr() { return &m_LadderMgr; }
+    // Player Wars phase-1 queue handler. Kept separate from Clan War.
+    void OnPlayerWarsFindMatch(const MUID& connection_uid, int playlist);
+    void OnPlayerWarsCancelMatch(const MUID& connection_uid);
 	MMatchObjectList*	GetObjects() { return &m_Objects; }
 	MMatchStageMap*		GetStageMap() { return &m_StageMap; }
 	MMatchChannelMap*	GetChannelMap() { return &m_ChannelMap; }
