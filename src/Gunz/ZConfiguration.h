@@ -261,7 +261,8 @@ private:
 	bool bDrawTrails = true;
 	bool HitRegistrationDebugOutput{};
 	bool SlashEffect = true;
-	bool UnlockedDir{};
+	// EGunZ Phase 1: enabled by default for fresh configurations; user can toggle it off.
+	bool UnlockedDir{true};
 	bool ShowDebugInfo{};
 	float FOV = ToDegree(DEFAULT_FOV);
 	bool ColorInvert{};
