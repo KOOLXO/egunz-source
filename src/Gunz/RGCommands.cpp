@@ -126,6 +126,14 @@ static int ParseTexLevelArg(const StringView& String)
 
 void LoadRGCommands(ZChatCmdManager& CmdManager)
 {
+    // EXPERIMENTAL: temporary command-line trigger for the Player Wars
+    // JOIN/CANCEL network handshake. No ranked matches or MMR are enabled.
+    CmdManager.AddCommand(0, "pwfind",
+        [](const char*, int, char**) { ZPostPlayerWarsFindMatch(); },
+        CCF_LOBBY, 0, 0, true, "/pwfind", "Join experimental 2v2 Player Wars queue.");
+    CmdManager.AddCommand(0, "pwcancel",
+        [](const char*, int, char**) { ZPostPlayerWarsCancel(); },
+        CCF_LOBBY, 0, 0, true, "/pwcancel", "Leave experimental Player Wars queue.");
 	auto VisualFPSLimit = [](const char *line, int argc, char ** const argv) {
 		int nFPSLimit = atoi(argv[1]);
 		ZGetConfiguration()->VisualFPSLimit = nFPSLimit;
