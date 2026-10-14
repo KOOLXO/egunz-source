@@ -14,7 +14,7 @@ Do not trust client-supplied character ID, account ID, MMR, or match result. The
 1. Do **not** build with `EGUNZ_SERVER_DIR` pointed to the working server. This project has a CMake post-build deployment command that copies MatchServer.exe.
 2. Make a clean local checkout of this experimental branch, configure a separate build directory, and set `EGUNZ_SERVER_DIR=` empty.
 3. Confirm both GunZ client and MatchServer compile; packet tables must match.
-4. No in-game Find Ranked Match control is wired at this step. Once a dedicated button is added, verify JOIN, duplicate JOIN, CANCEL, disconnect pruning, attempts outside lobby, and separate accounts.
+4. Experimental client chat commands are provided: `/pwfind` (JOIN 2v2) and `/pwcancel` (CANCEL). These are test triggers, not the final Player Wars lobby UI. Verify JOIN, duplicate JOIN, CANCEL, disconnect pruning, attempts outside lobby, and separate accounts.
 5. Do not use on a public game server. No matchmaking/ratings are implemented.
 
 ## Review before next iteration
