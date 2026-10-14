@@ -232,6 +232,11 @@ enum Type : uint32_t
 #define MC_MATCH_LADDER_PREPARE					1578
 #define MC_MATCH_LADDER_LAUNCH					1579
 
+// Player Wars: isolated experimental matchmaking protocol (not Clan War).
+#define MC_MATCH_PLAYERWARS_REQUEST_JOIN        1581
+#define MC_MATCH_PLAYERWARS_RESPONSE_QUEUE      1582
+#define MC_MATCH_PLAYERWARS_REQUEST_CANCEL      1583
+
 //
 // 1600-1649: User actions
 //
