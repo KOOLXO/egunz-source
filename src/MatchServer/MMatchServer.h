@@ -15,6 +15,7 @@
 #include "MMatchShutdown.h"
 #include "MMatchChatRoom.h"
 #include "MLadderMgr.h"
+#include "MPlayerWarsQueue.h"
 #include "MMatchQuest.h"
 #include "MTypes.h"
 #include "MStringRes.h"
