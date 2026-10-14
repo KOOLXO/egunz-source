@@ -689,6 +689,7 @@ protected:
 	MMatchShutdown		m_MatchShutdown;
 	MMatchChatRoomMgr	m_ChatRoomMgr;
 	MLadderMgr			m_LadderMgr;
+    MPlayerWarsQueue    m_PlayerWarsQueue;
 
 	bool				m_bCreated{};
 
