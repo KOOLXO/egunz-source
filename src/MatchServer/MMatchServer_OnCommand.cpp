@@ -1286,6 +1286,18 @@ _STATUS_CMD_START;
 			break;
 
 
+		// Player Wars phase-1: authenticated sender identity is resolved server-side.
+        case MC_MATCH_PLAYERWARS_REQUEST_JOIN:
+            {
+                int playlist = 0;
+                if (!pCommand->GetParameter(&playlist, 0, MPT_INT)) break;
+                OnPlayerWarsFindMatch(pCommand->GetSenderUID(), playlist);
+            }
+            break;
+        case MC_MATCH_PLAYERWARS_REQUEST_CANCEL:
+            OnPlayerWarsCancelMatch(pCommand->GetSenderUID());
+            break;
+
 		case MC_MATCH_LADDER_REQUEST_CHALLENGE:
 			{
 				int nMemberCount;
