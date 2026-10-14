@@ -793,6 +793,16 @@ inline void ZPostLadderRequestChallenge(const char* const* ppMemberCharNames, in
 	MEraseBlobArray(pBlobMembersName);
 }
 
+// Player Wars phase-1 packet helpers. No client identity or MMR field.
+inline void ZPostPlayerWarsFindMatch()
+{
+    ZPOSTCMD1(MC_MATCH_PLAYERWARS_REQUEST_JOIN, MCmdParamInt(2));
+}
+inline void ZPostPlayerWarsCancel()
+{
+    ZPOSTCMD0(MC_MATCH_PLAYERWARS_REQUEST_CANCEL);
+}
+
 inline void ZPostLadderCancel()
 {
 	ZPOSTCMD0(MC_MATCH_LADDER_REQUEST_CANCEL_CHALLENGE)
