@@ -705,6 +705,14 @@ void MAddSharedCommandTable(MCommandManager* CommandManager, MSharedCommandType:
 		C(MC_MATCH_SET_OBSERVER, "Match.Set.Observer", "Set Observer", MCDT_MACHINE2MACHINE);
 			P(MPT_UID, "uidChar");
 
+		// Individual Player Wars queue; clients send only the requested playlist.
+        C(MC_MATCH_PLAYERWARS_REQUEST_JOIN, "Match.PlayerWars.Request.Join", "Queue for Player Wars", MCDT_MACHINE2MACHINE);
+            P(MPT_INT, "Playlist");
+        C(MC_MATCH_PLAYERWARS_RESPONSE_QUEUE, "Match.PlayerWars.Response.Queue", "Player Wars queue result", MCDT_MACHINE2MACHINE);
+            P(MPT_INT, "Result");
+            P(MPT_INT, "QueueCount");
+        C(MC_MATCH_PLAYERWARS_REQUEST_CANCEL, "Match.PlayerWars.Request.Cancel", "Leave Player Wars queue", MCDT_MACHINE2MACHINE);
+
 		C(MC_MATCH_LADDER_REQUEST_CHALLENGE, "Match.Ladder.Request.Challenge", "Request Challenge a Ladder", MCDT_MACHINE2MACHINE);
 			P(MPT_INT, "MemberCount");
 			P(MPT_UINT, "Options");
