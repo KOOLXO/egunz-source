@@ -338,6 +338,20 @@ enum MMatchProposalMode
 	MPROPOSAL_END
 };
 
+// Player Wars phase-1 queue responses. No match/ratings are awarded.
+enum class MPlayerWarsQueueResult : int
+{
+    Joined = 0,
+    AlreadyQueued = 1,
+    AccountAlreadyQueued = 2,
+    UnsupportedPlaylist = 3,
+    NotInLobby = 4,
+    OtherQueue = 5,
+    InvalidIdentity = 6,
+    Cancelled = 7,
+    NotQueued = 8
+};
+
 enum MLADDERTYPE {
 	MLADDERTYPE_NORMAL_2VS2		= 0,
 	MLADDERTYPE_NORMAL_3VS3,
