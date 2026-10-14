@@ -10,6 +10,28 @@ bool ZGameClient::OnCommand(MCommand* pCommand)
 	bool ret = MMatchClient::OnCommand(pCommand);
 
 	switch (pCommand->GetID()) {
+	case MC_MATCH_PLAYERWARS_RESPONSE_QUEUE:
+    {
+        int result = -1, queue_count = 0;
+        if (!pCommand->GetParameter(&result, 0, MPT_INT) ||
+            !pCommand->GetParameter(&queue_count, 1, MPT_INT))
+            break;
+        const char* label = "Unknown queue response";
+        switch (static_cast<MPlayerWarsQueueResult>(result))
+        {
+        case MPlayerWarsQueueResult::Joined: label = "Joined experimental 2v2 queue"; break;
+        case MPlayerWarsQueueResult::AlreadyQueued: label = "Already in Player Wars queue"; break;
+        case MPlayerWarsQueueResult::AccountAlreadyQueued: label = "Account already queued"; break;
+        case MPlayerWarsQueueResult::UnsupportedPlaylist: label = "Playlist not available"; break;
+        case MPlayerWarsQueueResult::NotInLobby: label = "Return to lobby before queuing"; break;
+        case MPlayerWarsQueueResult::OtherQueue: label = "Leave current ladder queue first"; break;
+        case MPlayerWarsQueueResult::InvalidIdentity: label = "Invalid character/account"; break;
+        case MPlayerWarsQueueResult::Cancelled: label = "Left Player Wars queue"; break;
+        case MPlayerWarsQueueResult::NotQueued: label = "Not currently queued"; break;
+        }
+        ZChatOutput(MCOLOR(ZCOLOR_CHAT_SYSTEM), label);
+    }
+    break;
 	case MC_MATCH_PING_LIST:
 	{
 		auto Param = pCommand->GetParameter(0);
