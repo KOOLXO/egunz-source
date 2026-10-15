@@ -5,8 +5,11 @@
 // No client MMR, result, or identity is accepted. Match creation and rating
 // updates are intentionally out of scope for this first network handshake.
 
+#include <algorithm>
+#include <array>
 #include <cstdint>
 #include <map>
+#include <vector>
 #include "MUID.h"
 
 class MPlayerWarsQueue
@@ -66,6 +69,27 @@ public:
             else
                 ++it;
         }
+    }
+
+    // Phase-1 solo queue: select the four oldest 2v2 tickets. Do not consume
+    // them here: the server removes tickets only after a successful launch.
+    bool Next2v2(std::array<Ticket, 4>& out) const
+    {
+        if (tickets_.size() < out.size())
+            return false;
+
+        std::vector<Ticket> waiting;
+        waiting.reserve(tickets_.size());
+        for (const auto& entry : tickets_)
+            if (entry.second.playlist == 2)
+                waiting.push_back(entry.second);
+        if (waiting.size() < out.size())
+            return false;
+
+        std::sort(waiting.begin(), waiting.end(),
+            [](const Ticket& a, const Ticket& b) { return a.id < b.id; });
+        std::copy_n(waiting.begin(), out.size(), out.begin());
+        return true;
     }
 
     std::size_t Count() const { return tickets_.size(); }
