@@ -1,0 +1,21 @@
+name: Player Wars Phase 1 queue smoke
+on:
+  push:
+    branches:
+      - feature/playerwars-phase1-2v2-match
+  pull_request:
+    paths:
+      - 'src/MatchServer/MPlayerWarsQueue.h'
+      - 'tests/playerwars_phase1_2v2/**'
+      - '.github/workflows/playerwars-phase1-queue-smoke.yml'
+jobs:
+  queue-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile standalone queue smoke test
+        run: |
+          c++ -std=c++17 -Wall -Wextra -pedantic \
+            -Itests/playerwars_phase1_2v2/stubs \
+            tests/playerwars_phase1_2v2/queue_smoke.cpp -o pw_queue_smoke
+          ./pw_queue_smoke
