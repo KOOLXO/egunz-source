@@ -349,7 +349,8 @@ enum class MPlayerWarsQueueResult : int
     OtherQueue = 5,
     InvalidIdentity = 6,
     Cancelled = 7,
-    NotQueued = 8
+    NotQueued = 8,
+    Unavailable = 9
 };
 
 enum MLADDERTYPE {
