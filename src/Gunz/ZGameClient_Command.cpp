@@ -29,6 +29,7 @@ bool ZGameClient::OnCommand(MCommand* pCommand)
         case MPlayerWarsQueueResult::Cancelled: label = "Left Player Wars queue"; break;
         case MPlayerWarsQueueResult::NotQueued: label = "Not currently queued"; break;
         case MPlayerWarsQueueResult::Unavailable: label = "Player Wars 2v2 test requires a normal-mode server"; break;
+        case MPlayerWarsQueueResult::LaunchFailed: label = "Player Wars match failed to start; queue cancelled"; break;
         }
         ZChatOutput(MCOLOR(ZCOLOR_CHAT_SYSTEM), label);
     }
