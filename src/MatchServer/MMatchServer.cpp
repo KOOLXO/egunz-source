@@ -678,7 +678,7 @@ void MMatchServer::OnRun(void)
 	MGetServerStatusSingleton()->SetRunStatus(105);
 
 	// Prune disconnected or ineligible Player Wars tickets.
-    // This phase does not invoke the ranked matchmaker or create any stages.
+    // Prune first, then try to launch a 2v2 match with four eligible tickets.
     m_PlayerWarsQueue.Prune([this](const MPlayerWarsQueue::Ticket& ticket) {
         MMatchObject* player = GetObject(ticket.connection_uid);
         return IsEnabledObject(player)
@@ -689,8 +689,10 @@ void MMatchServer::OnRun(void)
             && player->GetPlace() == MMP_LOBBY
             && player->GetStageUID() == MUID(0, 0)
             && !player->IsLaunchedGame()
-            && !player->IsLadderChallenging();
+            && !player->IsLadderChallenging()
+            && player->GetLadderGroupID() == 0;
     });
+    ProcessPlayerWarsMatches();
 
 	// Update Ladders
 	if ( (MGetServerConfig()->GetServerMode() == MSM_CLAN) || (MGetServerConfig()->GetServerMode() == MSM_TEST))
