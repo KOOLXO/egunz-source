@@ -1,9 +1,9 @@
 #pragma once
 // EGunZ Player Wars / experimental branch only.
 //
-// Phase 1 is a server-owned WAITING queue, NOT competitive matchmaking.
-// No client MMR, result, or identity is accepted. Match creation and rating
-// updates are intentionally out of scope for this first network handshake.
+// Phase 1 keeps server-owned waiting tickets and selects four solo players
+// for automatic 2v2 stage launch. It does not accept client MMR, match
+// results or account identity; ranked rating updates are Phase 2.
 
 #include <algorithm>
 #include <array>
