@@ -28,6 +28,7 @@ bool ZGameClient::OnCommand(MCommand* pCommand)
         case MPlayerWarsQueueResult::InvalidIdentity: label = "Invalid character/account"; break;
         case MPlayerWarsQueueResult::Cancelled: label = "Left Player Wars queue"; break;
         case MPlayerWarsQueueResult::NotQueued: label = "Not currently queued"; break;
+        case MPlayerWarsQueueResult::Unavailable: label = "Player Wars 2v2 test requires a normal-mode server"; break;
         }
         ZChatOutput(MCOLOR(ZCOLOR_CHAT_SYSTEM), label);
     }
