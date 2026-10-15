@@ -80,6 +80,7 @@ public:
     // Player Wars phase-1 queue handler. Kept separate from Clan War.
     void OnPlayerWarsFindMatch(const MUID& connection_uid, int playlist);
     void OnPlayerWarsCancelMatch(const MUID& connection_uid);
+    void ProcessPlayerWarsMatches();
 	MMatchObjectList*	GetObjects() { return &m_Objects; }
 	MMatchStageMap*		GetStageMap() { return &m_StageMap; }
 	MMatchChannelMap*	GetChannelMap() { return &m_ChannelMap; }
@@ -690,6 +691,7 @@ protected:
 	MMatchChatRoomMgr	m_ChatRoomMgr;
 	MLadderMgr			m_LadderMgr;
     MPlayerWarsQueue    m_PlayerWarsQueue;
+    u64                 m_LastPlayerWarsMatchTick = 0;
 
 	bool				m_bCreated{};
 
