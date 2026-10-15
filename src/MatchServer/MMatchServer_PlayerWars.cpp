@@ -1,5 +1,5 @@
-// EGunZ Player Wars: experimental JOIN/CANCEL handshake only.
-// Matchmaking, stage creation, MMR and persistence are not enabled here.
+// EGunZ Player Wars Phase 1: authenticated 2v2 solo queue and stage launch.
+// No ranked MMR, database updates, or Clan War scoring is performed.
 #include "stdafx.h"
 #include "MMatchServer.h"
 #include "MSharedCommandTable.h"
@@ -101,7 +101,7 @@ void MMatchServer::OnPlayerWarsCancelMatch(const MUID& connection_uid)
         static_cast<int>(m_PlayerWarsQueue.Count()));
 }
 
- 
+
 // One 2v2 solo-queue launch per server tick. The existing LadderJoin and
 // MC_MATCH_LADDER_LAUNCH commands are reused for network/stage compatibility;
 // the Clan War manager, clan points and ladder-team DB are NOT invoked.
@@ -167,7 +167,10 @@ void MMatchServer::ProcessPlayerWarsMatches()
         return;
     MMatchStage* stage = FindStage(stageUID);
     if (!stage)
+    {
+        StageRemove(stageUID, nullptr);
         return;
+    }
 
     stage->SetStageType(MST_LADDER);
     stage->ChangeRule(gameType);
