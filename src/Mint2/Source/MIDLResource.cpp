@@ -1658,7 +1658,10 @@ MPicture* MIDLResource::GetPicture(MXmlElement& element)
 		{
 			char ctemp[16];
 			childElement.GetContents( ctemp );
-			if( ctemp[0] == 'x' )
+			// Partial native-size stretching breaks the fitted high-DPI layout.
+			if (m_fLegacyLayoutScale != 1.0f)
+				pPicture->SetStretch(3);
+			else if( ctemp[0] == 'x' )
 				pPicture->SetStretch(1);
 			else if( ctemp[0] == 'y' )
 				pPicture->SetStretch(2);
