@@ -195,6 +195,9 @@ MBmButton* MIDLResource::GetBmButton(MXmlElement& element)
 	pListener = pParentWidget = GetParentWidget(element);
 	MBmButton* pBmButton = (MBmButton*)Mint::GetInstance()->NewWidget(MINT_BMBUTTON, "", pParentWidget, pListener);
 	InsertWidget(element, pBmButton);
+	// Bitmap setters otherwise reset the size to the source texture's pixel size.
+	if (m_fLegacyLayoutScale != 1.0f)
+		pBmButton->SetStretch(true);
 
 	int iCount = element.GetChildNodeCount();
 
@@ -1020,7 +1023,7 @@ MBThumbLook* MIDLResource::GetThumbLook(MXmlElement& element)
 	// Default Look
 	if(bDefaultLook==true) MThumb::ChangeLook(pThumbLook);
 
-	// ThumbLook µÓ∑œ
+	// ThumbLook ¬µ√Æ¬∑√è
 	char szItem[256];
 	element.GetAttribute(szItem, IDL_ATTR_ITEM, "");
 	if(!m_ThumbLookMap.insert(map<string, MBThumbLook*>::value_type(string(szItem), pThumbLook)).second)
@@ -1065,7 +1068,7 @@ MBScrollBarLook* MIDLResource::GetScrollBarLook(MXmlElement& element)
 	// Default Look
 	if(bDefaultLook==true) MScrollBar::ChangeLook(pScrollBarLook);
 
-	// ScrollBarLook µÓ∑œ
+	// ScrollBarLook ¬µ√Æ¬∑√è
 	char szItem[256];
 	element.GetAttribute(szItem, IDL_ATTR_ITEM, "");
 	if(!m_ScrollBarLookMap.insert(map<string, MBScrollBarLook*>::value_type(string(szItem), pScrollBarLook)).second)
@@ -1111,7 +1114,7 @@ MBSliderThumbLook* MIDLResource::GetSliderThumbLook(MXmlElement& element)
 	// Default Look
 	if(bDefaultLook==true) MSliderThumb::ChangeLook((MSliderThumbLook*)pSliderThumbLook);
 
-	// ThumbLook µÓ∑œ
+	// ThumbLook ¬µ√Æ¬∑√è
 	char szItem[256];
 	element.GetAttribute(szItem, IDL_ATTR_ITEM, "");
 	if(!m_ThumbLookMap.insert(map<string, MBThumbLook*>::value_type(string(szItem), (MBThumbLook*)pSliderThumbLook)).second)
@@ -1152,7 +1155,7 @@ MBTabCtrlLook* MIDLResource::GetTabCtrlLook(MXmlElement& element)
 	// Default Look
 	if(bDefaultLook==true) MTabCtrl::ChangeLook(pTabCtrlLook);
 
-	// MTabCtrlLook µÓ∑œ
+	// MTabCtrlLook ¬µ√Æ¬∑√è
 	char szItem[256];
 	element.GetAttribute(szItem, IDL_ATTR_ITEM, "");
 	if(!m_TabCtrlLookMap.insert(map<string, MBTabCtrlLook*>::value_type(string(szItem), pTabCtrlLook)).second)
@@ -1201,6 +1204,18 @@ bool MIDLResource::GetCommonWidgetProperty(MWidget* pWidget, MXmlElement& elemen
 			h = r.h;
 		}
 		MRECT rect = GetRect(element);
+		const bool isLegacyFullScreenRoot = pWidget->GetParent() == m_pParent &&
+			rect.x == 0 && rect.y == 0 && rect.w == 800 && rect.h == 600;
+		// Scale position and hit targets using the same factor as the fonts/bitmaps.
+		// Keep the original negative-width/height fill-parent semantics.
+		if (m_fLegacyLayoutScale != 1.0f) {
+			rect.x = static_cast<int>(rect.x * m_fLegacyLayoutScale + 0.5f);
+			rect.y = static_cast<int>(rect.y * m_fLegacyLayoutScale + 0.5f);
+			if (rect.w >= 0) rect.w = static_cast<int>(rect.w * m_fLegacyLayoutScale + 0.5f);
+			if (rect.h >= 0) rect.h = static_cast<int>(rect.h * m_fLegacyLayoutScale + 0.5f);
+			if (isLegacyFullScreenRoot)
+				rect.x = (MGetWorkspaceWidth() - rect.w) / 2;
+		}
 		if(rect.w<0) rect.w = w-abs(rect.x);
 		if(rect.h<0) rect.h = h-abs(rect.y);
 
@@ -1620,6 +1635,9 @@ MPicture* MIDLResource::GetPicture(MXmlElement& element)
 	pListener = pParentWidget = GetParentWidget(element);
 	MPicture* pPicture = (MPicture*)Mint::GetInstance()->NewWidget(MINT_PICTURE, "", pParentWidget, pListener);
 	InsertWidget(element, pPicture);
+	// Native-size bitmaps must occupy the same scaled hit/layout rectangle.
+	if (m_fLegacyLayoutScale != 1.0f)
+		pPicture->SetStretch(3);
 
 	int iCount = element.GetChildNodeCount();
 
