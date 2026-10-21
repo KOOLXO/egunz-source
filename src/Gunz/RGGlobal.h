@@ -1,5 +1,8 @@
 #pragma once
 
+// Defer UI rebuild until the current chat/mouse event has returned.
+#define WM_EGUNZ_REFLOW_UI (WM_APP + 177)
+
 inline void cprint(...) {}
 
 static constexpr int RG_SLASH_RADIUS = 320;
