@@ -529,6 +529,16 @@ LONG_PTR FAR PASCAL WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 {
 	switch (message)
 	{
+		case WM_EGUNZ_REFLOW_UI:
+		{
+			if (auto* ui = ZApplication::GetGameInterface()) {
+				ui->SetBounds(0, 0, MGetWorkspaceWidth(), MGetWorkspaceHeight());
+				// Active combat widgets and resources must not be destroyed mid-match.
+				if (ui->GetState() != GUNZ_GAME)
+					ui->ChangeInterfaceSkin(ZGetConfiguration()->GetInterfaceSkinName());
+			}
+			return 0;
+		}
 		case WM_CREATE:
 			if (strlen(Z_LOCALE_HOMEPAGE_TITLE) > 0)
 			{
