@@ -154,7 +154,11 @@ RRESULT OnCreate(void *pParam)
 
 	g_pDefFont = new MFontR2;
 
-	if( !g_pDefFont->Create("Default", Z_LOCALE_DEFAULT_FONT, 9, 1.0f) )
+	const float fontScaleX = static_cast<float>(g_ModeParams.nWidth) / 800.0f;
+	const float fontScaleY = static_cast<float>(g_ModeParams.nHeight) / 600.0f;
+	const float fontScale = fontScaleX < fontScaleY ? fontScaleX : fontScaleY;
+	const int fontHeight = static_cast<int>(9.0f * fontScale + 0.5f);
+	if( !g_pDefFont->Create("Default", Z_LOCALE_DEFAULT_FONT, fontHeight > 0 ? fontHeight : 1, 1.0f) )
 	{
 		mlog("Fail to Create defualt font : MFontR2 / main.cpp.. onCreate\n" );
 		g_pDefFont->Destroy();
