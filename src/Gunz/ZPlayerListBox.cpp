@@ -61,7 +61,10 @@ static float GetF(float _old, float _new) {
 	return _old/_new;
 }
 static float GetF(float _new) {
-	return _new/800.f;
+	// XML widgets now use uniform 800x600 scaling; list columns must match it.
+	const float scaleX = _new / 800.0f;
+	const float scaleY = static_cast<float>(RGetScreenHeight()) / 600.0f;
+	return scaleX < scaleY ? scaleX : scaleY;
 }
 
 void ZPlayerListBoxLook::OnDraw(MListBox* pListBox, MDrawContext* pDC)
