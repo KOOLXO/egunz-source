@@ -178,7 +178,8 @@ RRESULT OnCreate(void *pParam)
 	}
 #endif
 
-	g_Mint.Initialize(800, 600, g_pDC, g_pDefFont);
+	// Mint must know the actual display size BEFORE the XML resources/fonts load.
+	g_Mint.Initialize(g_ModeParams.nWidth, g_ModeParams.nHeight, g_pDC, g_pDefFont);
 	Mint::GetInstance()->SetHWND(RealSpace2::g_hWnd);
 
 	mlog("main : g_Mint.Initialize() \n");
