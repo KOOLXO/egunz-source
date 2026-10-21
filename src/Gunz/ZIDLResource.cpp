@@ -766,7 +766,9 @@ MFont* ZIDLResource::CreateFont(char* szAliasName, char* szFontName, int nHeight
 								bool bBold, bool bItalic, int nOutlineStyle, bool bAntialiasing, DWORD nColorArg1, DWORD nColorArg2)
 {
 	MFontR2* pNew = new MFontR2;
-	pNew->Create(szAliasName, szFontName, nHeight, 1.0f, bBold, bItalic, nOutlineStyle, -1, bAntialiasing, nColorArg1, nColorArg2);
+	const float scale = GetLegacyLayoutScale();
+	const int scaledHeight = static_cast<int>(nHeight * scale + 0.5f);
+	pNew->Create(szAliasName, szFontName, scaledHeight > 0 ? scaledHeight : 1, 1.0f, bBold, bItalic, nOutlineStyle, -1, bAntialiasing, nColorArg1, nColorArg2);
 	return pNew;
 }
 
