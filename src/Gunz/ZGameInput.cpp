@@ -508,11 +508,11 @@ void ZGameInput::Update(float fElapsed)
 			ZGetInput()->GetRotation(&fRotateX, &fRotateY);
 #endif
 
-			// EGunZ Phase 1: free camera rotation only while wall-running.
-			// Keep IsDirLocked() unchanged so other locked actions and K-style remain classic.
-			const bool bWallRunCameraUnlocked = ZGetConfiguration()->GetUnlockedDir() &&
-				pMyCharacter->m_bWallJump;
-			const bool bRotateEnable = !pMyCharacter->IsDirLocked() || bWallRunCameraUnlocked;
+#ifdef NO_DIRECTION_LOCK
+			bool bRotateEnable = !pMyCharacter->IsDirLocked() || ZGetConfiguration()->GetUnlockedDir();
+#else
+			bool bRotateEnable = !pMyCharacter->IsDirLocked();
+#endif
 
 			if (RIsActive())
 			{
