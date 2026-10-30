@@ -21,7 +21,7 @@ public:
 	virtual bool Draw(u64 nTime) override;
 	virtual void Update() override;
 	virtual bool IsDeleteTime() override;
-	bool DrawCustom(u64 nTime, const rvector& offset, float fAngle = 0.0f);
+	bool DrawCustom(u64 nTime, const rvector& offset, float fAngle = 0.0f, float screenOffsetX = 0.0f);
 	RealSpace2::RVisualMesh *GetVMesh() { return &m_VMesh; }
 	void SetOffset(rvector& offset) { m_Offset = offset; }
 };

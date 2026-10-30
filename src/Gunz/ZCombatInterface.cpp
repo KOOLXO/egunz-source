@@ -1,4 +1,6 @@
 ﻿#include "stdafx.h"
+#include "ZUiLayout.h"
+#include "ZUiDesign.h"
 #include "ZGameClient.h"
 #include "ZCombatInterface.h"
 #include "ZGameInterface.h"
@@ -344,6 +346,13 @@ void TextRelative(MDrawContext* pDC,float x,float y,const char *szText,bool bCen
 	pDC->Text(screenx, y * MGetWorkspaceHeight(), szText);
 }
 
+static void TextHealthHud(MDrawContext* dc, float x, float y, const char* text)
+{
+    const int corrected = MGetCorrectedWorkspaceWidth();
+    const int left = ZUiLayout::HudLeft(MGetWorkspaceWidth(), MGetWorkspaceHeight(), corrected);
+    dc->Text(int(x * corrected) + left, int(y * MGetWorkspaceHeight()), text);
+}
+
 void ZCombatInterface::DrawNPCName(MDrawContext* pDC)
 {
 	for(ZObjectManager::iterator itor = ZGetObjectManager()->begin();
@@ -500,7 +509,7 @@ void ZCombatInterface::OnDraw(MDrawContext* pDC)
 
 	if (!m_Observer.IsVisible())
 	{
-		MFont *pFont = GetGameFont();
+		MFont *pFont = ZUiDesign::Font();
 
 		pDC->SetFont(pFont);
 		pDC->SetColor(MCOLOR(0xFFFFFFFF));
@@ -513,7 +522,7 @@ void ZCombatInterface::OnDraw(MDrawContext* pDC)
 			|| (!pCharacter->IsObserverTarget()))
 		{
 			float fCenterVert = 0.018f - (float)pFont->GetHeight() / (float)RGetScreenHeight() / 2;
-			TextRelative(pDC, 100.f / 800.f, fCenterVert, buffer);
+			TextHealthHud(pDC, 100.f / 800.f, fCenterVert, buffer);
 		}
 
 		if (ZGetGame()->GetMatch()->GetMatchType() == MMATCH_GAMETYPE_GUNGAME)
@@ -535,9 +544,9 @@ void ZCombatInterface::OnDraw(MDrawContext* pDC)
 
 #ifdef DRAW_HPAP_NUMBERS
 		sprintf_safe(buffer, "%d", pCharacter->GetHP());
-		TextRelative(pDC, 84.f / 800.f, 24.f / 600.f, buffer);
+		TextHealthHud(pDC, 84.f / 800.f, 24.f / 600.f, buffer);
 		sprintf_safe(buffer, "%d", pCharacter->GetAP());
-		TextRelative(pDC, 84.f / 800.f, 51.f / 600.f, buffer);
+		TextHealthHud(pDC, 84.f / 800.f, 51.f / 600.f, buffer);
 #endif
 
 		if ( ZApplication::GetGame()->GetMatch()->GetMatchType() == MMATCH_GAMETYPE_DUEL)

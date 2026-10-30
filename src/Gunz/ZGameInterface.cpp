@@ -1342,6 +1342,7 @@ void ZGameInterface::OnLobbyCreate()
 	if (pWidget)
 		pWidget->SetFocus();
 
+	m_IDLResource.ApplyInterfaceReadability();
 	if (m_pBackground)
 		m_pBackground->SetScene(LOGIN_SCENE_FIXEDCHAR);
 }

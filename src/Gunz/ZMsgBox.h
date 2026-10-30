@@ -9,6 +9,9 @@ protected:
 	bool				m_bNextVisible;
 	MListener*			m_pCustomListener;
 
+	int m_LayoutWidth = 0, m_LayoutHeight = 0, m_LayoutDpi = 0;
+	void LayoutDialog();
+	virtual void OnSize(int w, int h) override;
 	virtual bool OnShow(void);
 	virtual void OnDraw(MDrawContext* pDC);
 

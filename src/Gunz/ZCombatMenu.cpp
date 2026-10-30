@@ -9,6 +9,7 @@
 #include "ZGameInterface.h"
 #include "ZInterfaceListener.h"
 #include "ZEscapeMenuLayout.h"
+#include "ZUiDesign.h"
 
 namespace EscapeMenuDesign
 {
@@ -24,8 +25,6 @@ static MWidget* FindChild(MWidget* parent, const char* id)
 }
 
 static ZEscapeMenuLayout Layout(1920, 1080);
-static MFontR2 Font;
-static int FontPoints = 0;
 
 class FrameLook : public MFrameLook
 {
@@ -35,8 +34,8 @@ public:
         const auto r = frame->GetInitialClientRect();
         dc->SetColor(MCOLOR(0xF51A2029)); dc->FillRectangle(r);
         dc->SetColor(MCOLOR(0xFF3B4655)); dc->Rectangle(r);
-        dc->SetColor(MCOLOR(0xFF45C2D1)); dc->FillRectangle(r.x, r.y, r.w, 3);
-        dc->SetFont(&Font);
+        dc->SetColor(MCOLOR(0xFF45C2D1)); dc->FillRectangle(r.x, r.y, r.w, ZUiDesign::Pixels(3));
+        dc->SetFont(ZUiDesign::Font());
         dc->SetColor(MCOLOR(0xFF45C2D1));
         dc->Text(r.x + Layout.Padding, r.y + Layout.Padding, "EGUNZ CLASSIC");
         dc->SetColor(MCOLOR(0xFFF2F5F8));
@@ -65,7 +64,7 @@ public:
         dc->FillRectangle(r);
         dc->SetColor(MCOLOR(over || resume ? 0xFF45C2D1 : 0xFF3B4655));
         dc->Rectangle(r);
-        dc->SetFont(&Font);
+        dc->SetFont(ZUiDesign::Font());
         dc->SetColor(MCOLOR(!enabled ? 0xFF78818D : quit ? 0xFFEFA5A5 : 0xFFF2F5F8));
         auto text = r; text.x += Layout.Padding / 2; text.w -= Layout.Padding;
         dc->Text(text, button->GetText(), MAM_LEFT | MAM_VCENTER);
@@ -108,12 +107,6 @@ void ZCombatMenu::ShowModal(bool show)
     {
         using namespace EscapeMenuDesign;
         Layout = ZEscapeMenuLayout(MGetWorkspaceWidth(), MGetWorkspaceHeight());
-        if (FontPoints != Layout.FontPoints)
-        {
-            if (FontPoints) Font.Destroy();
-            if (Font.Create("EGunZEscapeMenuFont", "Arial", Layout.FontPoints, 1.f, true))
-                FontPoints = Layout.FontPoints;
-        }
         auto* frame = static_cast<MFrame*>(widget);
         frame->ChangeCustomLook(&Frame);
         frame->SetBounds((MGetWorkspaceWidth() - Layout.Width) / 2,

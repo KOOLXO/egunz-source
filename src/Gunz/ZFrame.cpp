@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "ZFrame.h"
 #include "Mint.h"
+#include "ZGameInterface.h"
+#include "ZIDLResource.h"
 
 constexpr auto ZFRAME_TRANSIENT_TIME = 300;
 
@@ -19,6 +21,8 @@ void ZFrame::Show(bool bVisible, bool bModal)
 	}
 	m_bNextVisible = bVisible;
 
+	if (bVisible && !strcmp(m_szIDLName, "ChannelListFrame"))
+		ZGetGameInterface()->GetIDLResource()->LayoutChannelList();
 	MFrame::Show(bVisible,bModal);
 	m_bVisible = true;
 	

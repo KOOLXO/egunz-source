@@ -11,10 +11,11 @@
 #include "ZRuleDuel.h"
 #include "ZConfiguration.h"
 #include "RGMain.h"
+#include "ZUiLayout.h"
 
 constexpr float ScreenFOVInRadians = ToRadian(70);
 
-void DrawGuage(float x,float y,float fWidth,float fHeight,float fLeanDir,DWORD color);
+void DrawGuage(float x,float y,float fWidth,float fHeight,float fLeanDir,DWORD color, bool leftAnchored = false);
 
 ZScreenEffect::ZScreenEffect(RMesh *pMesh,rvector offset)
 {
@@ -46,7 +47,7 @@ bool ZScreenEffect::IsDeleteTime()
 	return false;
 }
 
-bool ZScreenEffect::DrawCustom(u64 nTime, const rvector& vOffset, float fAngle)
+bool ZScreenEffect::DrawCustom(u64 nTime, const rvector& vOffset, float fAngle, float screenOffsetX)
 {
 	RGetDevice()->SetRenderState(D3DRS_ZENABLE, FALSE);
 	RGetDevice()->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
@@ -77,12 +78,14 @@ bool ZScreenEffect::DrawCustom(u64 nTime, const rvector& vOffset, float fAngle)
 		View = Scale * View;
 	}
 	
-	bool ChangeProj = ZGetConfiguration()->GetInterfaceFix() || FOV != GetFOV();
+	bool ChangeProj = ZGetConfiguration()->GetInterfaceFix() || FOV != GetFOV() || screenOffsetX != 0.f;
 	if (ChangeProj)
 	{
 		OriginalProjection = RGetTransform(D3DTS_PROJECTION);
 		auto&& Proj = PerspectiveProjectionMatrixViewport(RGetScreenWidth(), RGetScreenHeight(),
 			FOV, 5, 10000);
+		// Translate the HUD mesh in clip space; preserve its proportions and animation.
+		Proj._31 += ZUiLayout::ClipShift(screenOffsetX, RGetScreenWidth(), Proj._34);
 		RSetTransform(D3DTS_PROJECTION, Proj);
 	}
 
@@ -486,7 +489,7 @@ void ZScreenEffectManager::Add(ZEffect *pEffect)
 	push_back(pEffect); 
 }
 
-void DrawGuage(float x,float y,float fWidth,float fHeight,float fLeanDir,DWORD color)
+void DrawGuage(float x,float y,float fWidth,float fHeight,float fLeanDir,DWORD color, bool leftAnchored)
 {
 	struct TLVERTEX {
 		float x, y, z, w;
@@ -502,6 +505,7 @@ void DrawGuage(float x,float y,float fWidth,float fHeight,float fLeanDir,DWORD c
 	
 	int corrected_workspace_w = MGetCorrectedWorkspaceWidth();
 	int start = (MGetWorkspaceWidth() - corrected_workspace_w) / 2;
+	if (leftAnchored) start += ZUiLayout::HudShift(MGetWorkspaceWidth(), MGetWorkspaceHeight(), corrected_workspace_w);
 
 	int x1,y1,x2,y2;
 	x1 = x * corrected_workspace_w + start;
@@ -592,17 +596,17 @@ int ZScreenEffectManager::DrawResetGuages()
 
 	color = D3DCOLOR_ARGB(255,  0,128,255);
 
-	DrawGuage(70.f/800.f , 23.f/600.f , min(1.f,_hp) * 138.f/800.f , 13.f/600.f , 1.f ,color);
+	DrawGuage(70.f/800.f , 23.f/600.f , min(1.f,_hp) * 138.f/800.f , 13.f/600.f , 1.f ,color, true);
 
 	// ap
 	color = D3DCOLOR_ARGB(255, 68,193, 62);
 
-	DrawGuage(84.f/800.f , 50.f/600.f , min(1.f,_ap) * 138.f/800.f , 13.f/600.f , -1.f ,color);
+	DrawGuage(84.f/800.f , 50.f/600.f , min(1.f,_ap) * 138.f/800.f , 13.f/600.f , -1.f ,color, true);
 
 	// exp
 	color = D3DCOLOR_ARGB(255,200,200,200);
 
-	DrawGuage(66.f/800.f , 70.f/600.f , min(1.f,m_fGuageEXP) * 138.f/800.f , 4.f/600.f , -1.f ,color);
+	DrawGuage(66.f/800.f , 70.f/600.f , min(1.f,m_fGuageEXP) * 138.f/800.f , 4.f/600.f , -1.f ,color, true);
 
 	if(_hp > 1.0f)
 	{
@@ -658,17 +662,17 @@ void ZScreenEffectManager::DrawGuages()
 	else if(m_fGuageHP > 0.3f)	color = D3DCOLOR_ARGB(255,231,220, 24);
 	else						color = D3DCOLOR_ARGB(255,233, 44, 22);
 
-	DrawGuage(70.f/800.f , 23.f/600.f , min(1.f,m_fGuageHP) * 138.f/800.f , 13.f/600.f , 1.f ,color);
+	DrawGuage(70.f/800.f , 23.f/600.f , min(1.f,m_fGuageHP) * 138.f/800.f , 13.f/600.f , 1.f ,color, true);
 
 	// ap
 	color = D3DCOLOR_ARGB(255, 68,193, 62);
 
-	DrawGuage(84.f/800.f , 50.f/600.f , min(1.f,m_fGuageAP) * 138.f/800.f , 13.f/600.f , -1.f ,color);
+	DrawGuage(84.f/800.f , 50.f/600.f , min(1.f,m_fGuageAP) * 138.f/800.f , 13.f/600.f , -1.f ,color, true);
 
 	// exp
 	color = D3DCOLOR_ARGB(255,200,200,200);
 
-	DrawGuage(66.f/800.f , 70.f/600.f , min(1.f,m_fGuageEXP) * 138.f/800.f , 4.f/600.f , -1.f ,color);
+	DrawGuage(66.f/800.f , 70.f/600.f , min(1.f,m_fGuageEXP) * 138.f/800.f , 4.f/600.f , -1.f ,color, true);
 
 	// alpha
 	RGetDevice()->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE);
@@ -682,7 +686,7 @@ void ZScreenEffectManager::DrawGuages()
 		float x = min(1.f,m_fGuageHP) * 138.f/800.f;
 		float w = (m_fCurGuageHP-m_fGuageHP) * 138.f/800.f;
 
-		DrawGuage( 70.f/800.f+x, 23.f/600.f , w , 13.f/600.f , 1.f ,color);
+		DrawGuage( 70.f/800.f+x, 23.f/600.f , w , 13.f/600.f , 1.f ,color, true);
 	}	
 
 	if(render_cur_ap) {
@@ -692,7 +696,7 @@ void ZScreenEffectManager::DrawGuages()
 		float x = min(1.f,m_fGuageAP) * 138.f/800.f;	
 		float w = (m_fCurGuageAP-m_fGuageAP) * 138.f/800.f;
 
-		DrawGuage(84.f/800.f+x , 50.f/600.f , w , 13.f/600.f , -1.f ,color);
+		DrawGuage(84.f/800.f+x , 50.f/600.f , w , 13.f/600.f , -1.f ,color, true);
 	}
 
 	RGetDevice()->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE);
@@ -744,7 +748,8 @@ void ZScreenEffectManager::Draw()
 			!pTargetCharacter->IsObserverTarget())
 		{
 			m_pHPPanel->Update();
-			m_pHPPanel->Draw(0);
+			m_pHPPanel->DrawCustom(0, rvector(0, 0, 0), 0.f,
+				float(ZUiLayout::HudShift(MGetWorkspaceWidth(), MGetWorkspaceHeight(), MGetCorrectedWorkspaceWidth())));
 
 			bool bDrawGuages = false;
 

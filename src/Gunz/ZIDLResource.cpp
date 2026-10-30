@@ -25,6 +25,7 @@
 #include "ZStringResManager.h"
 #include "ZActionKey.h"
 #include "RGMain.h"
+#include "ZUiDesign.h"
 #include "MEdit.h"
 #include "MLabel.h"
 #include "MButton.h"
@@ -1106,4 +1107,64 @@ void ZIDLResource::EnsureCrossHairOptions()
 		preview->m_IDLRect = bounds;
 		preview->SetBounds(bounds);
 	}
+}
+
+
+namespace
+{
+void ReadableChildren(MWidget* widget)
+{
+    if (!widget) return;
+    widget->SetFont(ZUiDesign::Font());
+    const char* type = widget->GetClassName();
+    if (!strcmp(type, "TextArea"))
+        static_cast<MTextArea*>(widget)->SetLineHeight(ZUiDesign::Pixels(22));
+    else if (!strcmp(type, "ListBox") || !strcmp(type, "ComboListBox"))
+        static_cast<MListBox*>(widget)->SetItemHeight(ZUiDesign::Pixels(28));
+    for (int i = 0; i < widget->GetChildCount(); ++i)
+        ReadableChildren(widget->GetChild(i));
+}
+}
+
+void ZIDLResource::ApplyInterfaceReadability()
+{
+    // These roots use the legacy 800x600 rectangle resize pass. Give their
+    // text an independent, DPI-neutral pixel size derived from the viewport.
+    // Options and the escape menu own their fonts and are not traversed here.
+    for (const char* name : {"Lobby", "Stage"})
+        ReadableChildren(FindWidget(name));
+    LayoutChannelList();
+}
+
+void ZIDLResource::LayoutChannelList()
+{
+    auto* frame = static_cast<MFrame*>(FindWidget("ChannelListFrame"));
+    if (!frame) return;
+    const ZUiLayout::Channel layout(MGetWorkspaceWidth(), MGetWorkspaceHeight());
+    frame->ChangeCustomLook(ZUiDesign::Panel());
+    frame->SetBounds(layout.x, layout.y, layout.width, layout.height);
+    ReadableChildren(frame);
+    auto place = [this](const char* id, int x, int y, int w, int h, bool button = false)
+    {
+        auto* child = FindWidget(id);
+        if (!child) return;
+        child->SetBounds(ZUiDesign::Pixels(x), ZUiDesign::Pixels(y),
+            ZUiDesign::Pixels(w), ZUiDesign::Pixels(h));
+        if (button) static_cast<MButton*>(child)->ChangeCustomLook(ZUiDesign::Button());
+    };
+    place("ChannelList_Normal", 24, 72, 140, 40, true);
+    place("ChannelList_Private", 24, 124, 140, 40, true);
+    place("ChannelList_Clan", 24, 176, 140, 40, true);
+    place("MyClanChannel", 24, 240, 140, 40, true);
+    place("ChannelList", 184, 72, 432, 280);
+    place("PrivateChannelInput", 184, 368, 280, 36);
+    place("PrivateChannelEnter", 476, 368, 140, 36, true);
+    place("ChannelJoin", 324, 420, 140, 40, true);
+    place("ChannelListClose", 476, 420, 140, 40, true);
+    if (auto* list = static_cast<MListBox*>(FindWidget("ChannelList")))
+    {
+        list->SetItemHeight(ZUiDesign::Pixels(32));
+        // Channel names occupy the full content width, without a legacy header.
+        list->SetVisibleHeader(false);
+    }
 }
