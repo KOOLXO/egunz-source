@@ -154,7 +154,11 @@ RRESULT OnCreate(void *pParam)
 
 	g_pDefFont = new MFontR2;
 
-	if( !g_pDefFont->Create("Default", Z_LOCALE_DEFAULT_FONT, 9, 1.0f) )
+	const float fontScaleX = static_cast<float>(g_ModeParams.nWidth) / 800.0f;
+	const float fontScaleY = static_cast<float>(g_ModeParams.nHeight) / 600.0f;
+	const float fontScale = fontScaleX < fontScaleY ? fontScaleX : fontScaleY;
+	const int fontHeight = static_cast<int>(9.0f * fontScale + 0.5f);
+	if( !g_pDefFont->Create("Default", Z_LOCALE_DEFAULT_FONT, fontHeight > 0 ? fontHeight : 1, 1.0f) )
 	{
 		mlog("Fail to Create defualt font : MFontR2 / main.cpp.. onCreate\n" );
 		g_pDefFont->Destroy();
@@ -178,7 +182,8 @@ RRESULT OnCreate(void *pParam)
 	}
 #endif
 
-	g_Mint.Initialize(800, 600, g_pDC, g_pDefFont);
+	// Mint must know the actual display size BEFORE the XML resources/fonts load.
+	g_Mint.Initialize(g_ModeParams.nWidth, g_ModeParams.nHeight, g_pDC, g_pDefFont);
 	Mint::GetInstance()->SetHWND(RealSpace2::g_hWnd);
 
 	mlog("main : g_Mint.Initialize() \n");
@@ -528,6 +533,16 @@ LONG_PTR FAR PASCAL WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 {
 	switch (message)
 	{
+		case WM_EGUNZ_REFLOW_UI:
+		{
+			if (auto* ui = ZApplication::GetGameInterface()) {
+				ui->SetBounds(0, 0, MGetWorkspaceWidth(), MGetWorkspaceHeight());
+				// Active combat widgets and resources must not be destroyed mid-match.
+				if (ui->GetState() != GUNZ_GAME)
+					ui->ChangeInterfaceSkin(ZGetConfiguration()->GetInterfaceSkinName());
+			}
+			return 0;
+		}
 		case WM_CREATE:
 			if (strlen(Z_LOCALE_HOMEPAGE_TITLE) > 0)
 			{

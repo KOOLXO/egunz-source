@@ -218,7 +218,7 @@ bool InitItemList(MWidget* pWidget)
 		char szName[256], szItem[256];
 		int d = i % 6;
 		sprintf_safe(szItem, "item%03d.png", d);
-		sprintf_safe(szName, "³ª¹«ºí·¹ÀÌµå%d", i);
+		sprintf_safe(szName, "ë‚˜ë¬´ë¸”ë ˆì´ë“œ%d", i);
 		AddListItem(pList, MBitmapManager::Get(szItem), szName, "Command Something");
 	}
 
@@ -408,6 +408,12 @@ bool ZGameInterface::InitInterface(const char* szSkinName, ZLoadingProgress *pLo
 	sprintf_safe(szFileName, "%s%s", szPath, FILENAME_INTERFACE_MAIN);
 
 	ZEmptyBitmap();
+
+	// Classic interface XML uses an 800x600 coordinate system. Uniform scaling
+	// keeps aspect ratio, readable fonts and clickable widget bounds together.
+	const float scaleX = static_cast<float>(MGetWorkspaceWidth()) / 800.0f;
+	const float scaleY = static_cast<float>(MGetWorkspaceHeight()) / 600.0f;
+	m_IDLResource.SetLegacyLayoutScale(scaleX < scaleY ? scaleX : scaleY);
 
 	// Pictures
 	ZLoadingProgress pictureProgress("pictures", pLoadingProgress, .7f);
@@ -927,7 +933,7 @@ bool ZGameInterface::OnGameCreate()
 	g_pGame = m_pGame;
 	if (!m_pGame->Create(ZApplication::GetFileSystem(), &gameLoading))
 	{
-		mlog("ZGame »ı¼º ½ÇÆĞ\n");
+		mlog("ZGame ìƒì„± ì‹¤íŒ¨\n");
 		SAFE_DELETE(m_pGame);
 		g_pGame = NULL;
 		m_bLoading = false;
@@ -1072,7 +1078,7 @@ void ZGameInterface::OnLoginCreate()
 	}
 
 
-	// ÆĞ³Î ÀÌ¹ÌÁö ·Îµù
+	// íŒ¨ë„ ì´ë¯¸ì§€ ë¡œë”©
 	if (m_pLoginPanel != NULL)
 	{
 		delete m_pLoginPanel;
@@ -3868,7 +3874,7 @@ bool GetItemDescStr(string& str, DWORD nItemID) {
 
 	if (pItemDesc->m_nResLevel) {
 		if (bAdd) str += " / ";
-		sprintf_safe(temp, "Á¦ÇÑ·¹º§:%d", pItemDesc->m_nResLevel);
+		sprintf_safe(temp, "ì œí•œë ˆë²¨:%d", pItemDesc->m_nResLevel);
 
 		nLen = (int)strlen(temp);
 		if ((int)str.size() + nLen > (nLine + 1) * MAX_TOOLTIP_LINE_STRING + 3) { str += "\n"; nLine++; }
@@ -3879,7 +3885,7 @@ bool GetItemDescStr(string& str, DWORD nItemID) {
 
 	if (pItemDesc->m_nWeight) {
 		if (bAdd) str += " / ";
-		sprintf_safe(temp, "¹«°Ô:%d", pItemDesc->m_nWeight);
+		sprintf_safe(temp, "ë¬´ê²Œ:%d", pItemDesc->m_nWeight);
 
 		nLen = (int)strlen(temp);
 		if ((int)str.size() + nLen > (nLine + 1) * MAX_TOOLTIP_LINE_STRING + 3) { str += "\n"; nLine++; }
@@ -3890,7 +3896,7 @@ bool GetItemDescStr(string& str, DWORD nItemID) {
 
 	if (pItemDesc->m_nMaxBullet) {
 		if (bAdd) str += " / ";
-		sprintf_safe(temp, "ÃÖ´ëÅº¼ö : %d", pItemDesc->m_nMaxBullet);
+		sprintf_safe(temp, "ìµœëŒ€íƒ„ìˆ˜ : %d", pItemDesc->m_nMaxBullet);
 
 		nLen = (int)strlen(temp);
 		if ((int)str.size() + nLen > (nLine + 1) * MAX_TOOLTIP_LINE_STRING + 3) { str += "\n"; nLine++; }
@@ -3902,7 +3908,7 @@ bool GetItemDescStr(string& str, DWORD nItemID) {
 
 	if (pItemDesc->m_nMagazine) {
 		if (bAdd) str += " / ";
-		sprintf_safe(temp, "ÅºÃ¢ : %d", pItemDesc->m_nMagazine);
+		sprintf_safe(temp, "íƒ„ì°½ : %d", pItemDesc->m_nMagazine);
 
 		nLen = (int)strlen(temp);
 		if ((int)str.size() + nLen > (nLine + 1) * MAX_TOOLTIP_LINE_STRING + 3) { str += "\n"; nLine++; }
@@ -3913,7 +3919,7 @@ bool GetItemDescStr(string& str, DWORD nItemID) {
 
 	if (pItemDesc->m_nDamage) {
 		if (bAdd) str += " / ";
-		sprintf_safe(temp, "°ø°İ·Â : %d", pItemDesc->m_nDamage);
+		sprintf_safe(temp, "ê³µê²©ë ¥ : %d", pItemDesc->m_nDamage);
 
 		nLen = (int)strlen(temp);
 		if ((int)str.size() + nLen > (nLine + 1) * MAX_TOOLTIP_LINE_STRING + 3) { str += "\n"; nLine++; }
@@ -3924,7 +3930,7 @@ bool GetItemDescStr(string& str, DWORD nItemID) {
 
 	if (pItemDesc->m_nDelay) {
 		if (bAdd) str += " / ";
-		sprintf_safe(temp, "µô·¹ÀÌ : %d", pItemDesc->m_nDelay);
+		sprintf_safe(temp, "ë”œë ˆì´ : %d", pItemDesc->m_nDelay);
 
 		nLen = (int)strlen(temp);
 		if ((int)str.size() + nLen > (nLine + 1) * MAX_TOOLTIP_LINE_STRING + 3) { str += "\n"; nLine++; }
@@ -3935,7 +3941,7 @@ bool GetItemDescStr(string& str, DWORD nItemID) {
 
 	if (pItemDesc->m_nReloadTime) {
 		if (bAdd) str += " / ";
-		sprintf_safe(temp, "ÀåÀü½Ã°£ : %d", pItemDesc->m_nReloadTime);
+		sprintf_safe(temp, "ì¥ì „ì‹œê°„ : %d", pItemDesc->m_nReloadTime);
 
 		nLen = (int)strlen(temp);
 		if ((int)str.size() + nLen > (nLine + 1) * MAX_TOOLTIP_LINE_STRING + 3) { str += "\n"; nLine++; }
@@ -3968,7 +3974,7 @@ bool GetItemDescStr(string& str, DWORD nItemID) {
 
 	if (pItemDesc->m_nMaxWT) {
 		if (bAdd) str += " / ";
-		sprintf_safe(temp, "+ÃÖ´ë¹«°Ô : %d", pItemDesc->m_nMaxWT);
+		sprintf_safe(temp, "+ìµœëŒ€ë¬´ê²Œ : %d", pItemDesc->m_nMaxWT);
 
 		nLen = (int)strlen(temp);
 		if ((int)str.size() + nLen > (nLine + 1) * MAX_TOOLTIP_LINE_STRING + 3) { str += "\n"; nLine++; }
@@ -4339,7 +4345,7 @@ void ZGameInterface::SelectShopTab(int nTabIndex)
 			pil->m_ListFilter = sel;
 	}
 
-	// ¹öÆ° ¼³Á¤
+	// ë²„íŠ¼ ì„¤ì •
 	MButton* pButton = (MButton*)pResource->FindWidget("BuyConfirmCaller");
 	if (pButton)
 	{
@@ -5635,7 +5641,7 @@ void ZGameInterface::OnResponseBuyQuestItem(const int nResult, const int nBP)
 	}
 	else
 	{
-		mlog("ZGameInterface::OnCommand::MC_MATCH_RESPONSE_BUY_QUEST_ITEM - Á¤ÀÇµÇÁö ¾ÊÀº °á°úÃ³¸®.\n");
+		mlog("ZGameInterface::OnCommand::MC_MATCH_RESPONSE_BUY_QUEST_ITEM - ì •ì˜ë˜ì§€ ì•Šì€ ê²°ê³¼ì²˜ë¦¬.\n");
 		ASSERT(0);
 	}
 }
@@ -5751,7 +5757,7 @@ void ZGameInterface::OnResponseServerStatusInfoList(const int nListCount, void* 
 			MTD_ServerStatusInfo* pss = (MTD_ServerStatusInfo*)MGetBlobArrayElement(pBlob, i);
 			if (0 == pss)
 			{
-				mlog("ZGameInterface::OnResponseServerStatusInfoList - %d¹øÂ°¿¡¼­ NULLÆ÷ÀÎÅÍ ¹ß»ı.", i);
+				mlog("ZGameInterface::OnResponseServerStatusInfoList - %dë²ˆì§¸ì—ì„œ NULLí¬ì¸í„° ë°œìƒ.", i);
 				continue;
 			}
 

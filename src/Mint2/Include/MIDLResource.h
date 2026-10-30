@@ -85,6 +85,7 @@ class MIDLResource
 {
 protected:
 	MWidget*						m_pParent;
+	float						m_fLegacyLayoutScale = 1.0f;
 
 	map<std::string, MBLabelLook*>		m_LabelLookMap;
 	map<std::string, MBButtonLook*>		m_ButtonLookMap;
@@ -185,6 +186,9 @@ public:
 	bool LoadFromFile(const char* szFileName, MWidget* pParent = NULL, MZFileSystem *pfs = NULL);
 	bool SaveToFile(const char* szFileName);
 	virtual void Clear();
+	// Uniform scaling for legacy 800x600 layouts; off by default for Mint tools.
+	void SetLegacyLayoutScale(float scale) { m_fLegacyLayoutScale = scale > 0.0f ? scale : 1.0f; }
+	float GetLegacyLayoutScale() const { return m_fLegacyLayoutScale; }
 	MWidgetMMap* GetWidgetMap() { return &m_WidgetMap; }
 	MWidget* FindWidget(string szItem);
 	void FindWidgets(MWidgetList& widgetList, std::string szItem);

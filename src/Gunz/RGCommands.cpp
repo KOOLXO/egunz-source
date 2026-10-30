@@ -8,6 +8,7 @@
 #include "RS2.h"
 #include <cstdint>
 #include "ZOptionInterface.h"
+#include "RGGlobal.h"
 #include "ZTestGame.h"
 #include "ZMyBotCharacter.h"
 
@@ -225,6 +226,9 @@ void LoadRGCommands(ZChatCmdManager& CmdManager)
 		Mint::GetInstance()->GetMainFrame()->SetSize(ModeParams.nWidth, ModeParams.nHeight);
 
 		ZGetOptionInterface()->Resize(ModeParams.nWidth, ModeParams.nHeight);
+
+		// Rebuild on a later Windows message, not while processing a chat widget.
+		PostMessage(g_hWnd, WM_EGUNZ_REFLOW_UI, 0, 0);
 
 		ZGetConfiguration()->Save();
 	}, CCF_ALL, 2, 2, true, "/resolution <width> <height>", "");

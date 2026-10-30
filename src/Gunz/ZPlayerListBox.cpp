@@ -61,7 +61,10 @@ static float GetF(float _old, float _new) {
 	return _old/_new;
 }
 static float GetF(float _new) {
-	return _new/800.f;
+	// XML widgets now use uniform 800x600 scaling; list columns must match it.
+	const float scaleX = _new / 800.0f;
+	const float scaleY = static_cast<float>(RGetScreenHeight()) / 600.0f;
+	return scaleX < scaleY ? scaleX : scaleY;
 }
 
 void ZPlayerListBoxLook::OnDraw(MListBox* pListBox, MDrawContext* pDC)
@@ -378,7 +381,19 @@ void ZPlayerListBox::OnSize(int w,int h)
 		m_Fields.Get(3)->nTabSize = 90 * fA; //clan grade
 		break;
 	};
-	
+
+	// Keep all columns inside compact lobby/player-list panels at every scale.
+	// The classic Channel columns total 214 design pixels before scaling.
+	if (m_nMode == PlayerListMode::Channel && m_Fields.GetCount() == 5) {
+		const float totalWidth = 214.0f * fA;
+		const float usableWidth = static_cast<float>(m_Rect.w) - 4.0f * fA;
+		if (usableWidth > 0.0f && totalWidth > usableWidth) {
+			const float fit = usableWidth / totalWidth;
+			for (int i = 0; i < 5; ++i)
+				m_Fields.Get(i)->nTabSize = static_cast<int>(m_Fields.Get(i)->nTabSize * fit);
+		}
+	}
+
 	RecalcList();
 }
 
