@@ -52,6 +52,7 @@ protected:
 	virtual MFont* CreateFont(char* szAliasName, char* szFontName, int nHeight
 		              ,bool bBold = false, bool bItalic = false, int nOutlineStyle = 0, bool bAntialiasing = false, DWORD nColorArg1=0, DWORD nColorArg2=0);
 public:
+	void EnsureCrossHairOptions();
 	ZIDLResource();
 	virtual ~ZIDLResource();
 };

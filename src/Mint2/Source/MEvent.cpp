@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "MEvent.h"
 #include "Mint.h"
+#include "MIMERead.h"
 
 MPOINT MEvent::LatestPos = MPOINT(0, 0);
 bool MEvent::bIMESupport = false;	// Default IME Support Enabled
@@ -70,6 +71,8 @@ void MEvent::ForceSetIME(u32 fdwConversion, u32 fdwSentence)
 
 int MEvent::TranslateEvent(struct HWND__* hwnd, u32 message, u32 wparam, u32 lparam)
 {
+	nMessage = 0;
+	wszIMECompositionResultString[0] = 0;
 	bCtrl = GetCtrlState();
 
 	switch(message){
@@ -192,31 +195,36 @@ int MEvent::TranslateEvent(struct HWND__* hwnd, u32 message, u32 wparam, u32 lpa
 
 			Mint* pMint = Mint::GetInstance();
 
+			szIMECompositionString[0] = 0;
+			szIMECompositionResultString[0] = 0;
+			pMint->m_nCompositionAttributeSize = 0;
 			HIMC hIMC = ImmGetContext(hwnd);
-			if (hIMC){
-				if(lparam&GCS_RESULTSTR){
-					LONG i = ImmGetCompositionString(hIMC, GCS_RESULTSTR, szIMECompositionResultString, sizeof(szIMECompositionResultString));
-					szIMECompositionResultString[i] = NULL;
-					pMint->m_nCompositionAttributeSize = 0;
-					memset(pMint->m_nCompositionAttributes, 0, sizeof(BYTE)*(MIMECOMPOSITIONSTRING_LENGTH));
+			if (hIMC) {
+				if (lparam & GCS_RESULTSTR) {
+					MIMERead::String(hIMC, GCS_RESULTSTR,
+						wszIMECompositionResultString, ImmGetCompositionStringW);
+					if (!MIMERead::ValidUTF16(wszIMECompositionResultString))
+						wszIMECompositionResultString[0] = 0;
+					// Preserve the legacy field encoding until its editor is migrated.
+					MIMERead::String(hIMC, GCS_RESULTSTR,
+						szIMECompositionResultString, ImmGetCompositionStringA);
+					memset(pMint->m_nCompositionAttributes, 0,
+						sizeof(pMint->m_nCompositionAttributes));
 				}
-				else{
-					szIMECompositionResultString[0] = NULL;
+				if (lparam & GCS_COMPSTR)
+					MIMERead::String(hIMC, GCS_COMPSTR,
+						szIMECompositionString, ImmGetCompositionStringA);
+				if (lparam & GCS_COMPATTR) {
+					const LONG bytes = ImmGetCompositionStringA(hIMC, GCS_COMPATTR,
+						pMint->m_nCompositionAttributes, sizeof(pMint->m_nCompositionAttributes));
+					if (bytes > 0 && bytes <= sizeof(pMint->m_nCompositionAttributes))
+						pMint->m_nCompositionAttributeSize = bytes;
 				}
-				if(lparam&GCS_COMPSTR){
-					LONG i = ImmGetCompositionString(hIMC, GCS_COMPSTR, szIMECompositionString, sizeof(szIMECompositionString));
-					szIMECompositionString[i] = NULL;
-
+				if (lparam & GCS_CURSORPOS) {
+					const LONG caret = ImmGetCompositionStringA(hIMC, GCS_CURSORPOS, NULL, 0);
+					pMint->m_nCompositionCaretPosition = caret >= 0 ? caret : 0;
 				}
-				else{
-					szIMECompositionString[0] = NULL;
-				}
-
-				if(lparam & GCS_COMPATTR)
-					pMint->m_nCompositionAttributeSize = ImmGetCompositionString(hIMC, GCS_COMPATTR, pMint->m_nCompositionAttributes, sizeof(pMint->m_nCompositionAttributes));
-
-				if(lparam & GCS_CURSORPOS)
-					pMint->m_nCompositionCaretPosition = ImmGetCompositionString(hIMC, GCS_CURSORPOS, NULL, 0);
+				ImmReleaseContext(hwnd, hIMC);
 			}
 			
 			return (EVENT_PROCESSED|EVENT_MINT_TRANSLATED);

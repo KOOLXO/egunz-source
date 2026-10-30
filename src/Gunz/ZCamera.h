@@ -4,7 +4,9 @@
 
 _USING_NAMESPACE_REALSPACE2
 
-#define CAMERA_DEFAULT_DISTANCE		290.f
+#include "CameraSettings.h"
+
+#define CAMERA_DEFAULT_DISTANCE float(CameraSettings::DefaultDistance)
 
 #define CAMERA_DEFAULT_ANGLEX		(PI_FLOAT/2.f)
 #define CAMERA_DEFAULT_ANGLEZ		(PI_FLOAT/4.f)
@@ -12,8 +14,8 @@ _USING_NAMESPACE_REALSPACE2
 #define CAMERA_ANGLEX_MIN	0.01f
 #define CAMERA_ANGLEX_MAX	(PI_FLOAT-0.01f)
 
-#define CAMERA_DIST_MAX		1000.f
-#define CAMERA_DIST_MIN		150.f
+#define CAMERA_DIST_MAX float(CameraSettings::MaxDistance)
+#define CAMERA_DIST_MIN float(CameraSettings::MinDistance)
 
 enum ZCAMERALOOKMODE
 {
@@ -41,6 +43,7 @@ public:
 	void Shock(float fPower, float fDuration, const v3& vDir);
 	void StopShock();
 	void Init();
+	void SetDistance(int distance) { m_fDist = float(CameraSettings::ClampDistance(distance)); }
 
 	auto GetLookMode() const { return m_nLookMode; }
 	void SetLookMode(ZCAMERALOOKMODE mode);
