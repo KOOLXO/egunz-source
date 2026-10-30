@@ -451,6 +451,8 @@ bool ZConfiguration::LoadConfig(const char* szFileName)
 			childElement.GetChildContents(&m_Etc.nCrossHair, ZTOK_ETC_CROSSHAIR);
 			childElement.GetChildContents(&CrossHairSize, ZTOK_ETC_CROSSHAIRSIZE);
 			CrossHairSize = CrossHairSettings::ClampSize(CrossHairSize);
+			childElement.GetChildContents(&CameraDistance, ZTOK_ETC_CAMERADISTANCE);
+			CameraDistance = CameraSettings::ClampDistance(CameraDistance);
 			char crossHairColor[64] = {};
 			childElement.GetChildContents(crossHairColor, ZTOK_ETC_CROSSHAIRCOLOR, sizeof(crossHairColor));
 			CrossHairColor = CrossHairSettings::ParseColor(crossHairColor, CrossHairColor);
@@ -702,6 +704,7 @@ bool ZConfiguration::SaveToFile(const char *szFileName, const char* szHeader)
 		Section.Add(ZTOK_ETC_REJECT_WHISPER, m_Etc.bRejectWhisper);
 		Section.Add(ZTOK_ETC_REJECT_INVITE, m_Etc.bRejectInvite);
 		Section.Add(ZTOK_ETC_CROSSHAIR, m_Etc.nCrossHair);
+		Section.Add(ZTOK_ETC_CAMERADISTANCE, CameraSettings::ClampDistance(CameraDistance));
 		Section.Add(ZTOK_ETC_CROSSHAIRSIZE, CrossHairSettings::ClampSize(CrossHairSize));
 		char crossHairColor[8];
 		sprintf_safe(crossHairColor, "%06X", CrossHairColor & 0xFFFFFF);

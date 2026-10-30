@@ -176,9 +176,9 @@ void ZCrossHair::Draw(MDrawContext* pDC)
 	if (g_pGame->m_pMyCharacter == NULL) return;
 
 	const float sizefactor = (float)MGetWorkspaceWidth() / 800.f *
-		CrossHairSettings::ClampSize(ZGetConfiguration()->CrossHairSize);
+		CrossHairSettings::ClampSize(ZGetConfiguration()->GetCrossHairSize());
 	const auto oldColor = pDC->GetBitmapColor();
-	pDC->SetBitmapColor(MCOLOR(0xFF000000 | ZGetConfiguration()->CrossHairColor));
+	pDC->SetBitmapColor(MCOLOR(0xFF000000 | ZGetConfiguration()->GetCrossHairColor()));
 
 	MPOINT center(MGetWorkspaceWidth()/2,MGetWorkspaceHeight()/2);
 
@@ -237,8 +237,8 @@ void ZCrossHair::OnDrawOptionCrossHairPreview(void* pCanvas, MDrawContext *pDC)
 	
 
 	const auto& cfg = *ZGetConfiguration();
-	float sizefactor = cfg.CrossHairSize;
-	u32 color = cfg.CrossHairColor;
+	float sizefactor = cfg.GetCrossHairSize();
+	u32 color = cfg.GetCrossHairColor();
 	auto* resource = ZApplication::GetGameInterface()->GetIDLResource();
 	if (auto* edit = static_cast<MEdit*>(resource->FindWidget("CrossHairSizeOption")))
 		sizefactor = CrossHairSettings::ParseSize(edit->GetText(), sizefactor);

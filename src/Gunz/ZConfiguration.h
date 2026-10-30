@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MXml.h"
+#include "CameraSettings.h"
 #include <string>
 #include <map>
 #include "ZActionDef.h"
@@ -208,6 +209,9 @@ public:
 	bool GetUnlockedDir() const { return UnlockedDir; }
 	bool GetShowDebugInfo() const { return ShowDebugInfo; }
 	float GetFOV() const { return FOV; }
+	int GetCameraDistance() const { return CameraDistance; }
+	float GetCrossHairSize() const { return CrossHairSize; }
+	u32 GetCrossHairColor() const { return CrossHairColor; }
 	bool GetColorInvert() const { return ColorInvert; }
 	bool GetMonochrome() const { return Monochrome; }
 
@@ -264,6 +268,7 @@ private:
 	bool UnlockedDir{};
 	bool ShowDebugInfo{};
 	float FOV = ToDegree(DEFAULT_FOV);
+	int CameraDistance = CameraSettings::DefaultDistance;
 	float CrossHairSize = 1.0f;
 	u32 CrossHairColor = 0xFFFFFF;
 	bool ColorInvert{};
@@ -368,6 +373,7 @@ ZConfiguration*	ZGetConfiguration();
 #define ZTOK_ETC_REJECT_WHISPER		"REJECT_WHISPER"
 #define ZTOK_ETC_REJECT_INVITE		"REJECT_INVITE"
 #define ZTOK_ETC_CROSSHAIR			"CROSSHAIR"
+#define ZTOK_ETC_CAMERADISTANCE "CAMERADISTANCE"
 #define ZTOK_ETC_CROSSHAIRSIZE "CROSSHAIRSIZE"
 #define ZTOK_ETC_CROSSHAIRCOLOR "CROSSHAIRCOLOR"
 #define ZTOK_ETC_DRAWTRAILS			"DRAWTRAILS"

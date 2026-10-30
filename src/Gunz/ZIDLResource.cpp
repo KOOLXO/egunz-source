@@ -28,6 +28,7 @@
 #include "MEdit.h"
 #include "MLabel.h"
 #include "MButton.h"
+#include "MSlider.h"
 #include "ZConfiguration.h"
 #include "CrossHairSettings.h"
 
@@ -800,7 +801,8 @@ void ZIDLResource::EnsureCrossHairOptions()
 	if (!parent) return;
 	const auto r = combo->GetRect();
 	const int gap = std::max(2, r.h / 4);
-	const int row = r.h + gap;
+	// Compact rows leave room for all controls above the existing Save/Cancel buttons.
+	const int row = r.h;
 	const int labelX = std::max(2, r.h / 12);
 	auto* editLook = static_cast<MEdit*>(FindWidget("NetworkPort1"));
 
@@ -810,8 +812,8 @@ void ZIDLResource::EnsureCrossHairOptions()
 		label->SetBounds(labelX, y, r.x - labelX - gap, r.h);
 		InsertWidget(id, label);
 	};
-	auto addEdit = [&](const char* id, int maxLength, int x, int y, int width) {
-		auto* edit = new MEdit(maxLength, "", parent);
+	auto addEdit = [&](const char* id, int maxLength, int x, int y, int width, MListener* listener = nullptr) {
+		auto* edit = new MEdit(maxLength, "", parent, listener);
 		edit->SetFont(combo->GetFont());
 		if (editLook) edit->ChangeCustomLook(editLook->GetLook());
 		edit->SetBounds(x, y, width, r.h);
@@ -822,8 +824,35 @@ void ZIDLResource::EnsureCrossHairOptions()
 	{
 		bool OnCommand(MWidget* sender, const char* message) override
 		{
-			if (!MWidget::IsMsg(message, MBTN_CLK_MSG)) return false;
 			auto* resource = ZGetGameInterface()->GetIDLResource();
+			auto* distance = static_cast<MEdit*>(resource->FindWidget("CameraDistanceOption"));
+			auto* slider = static_cast<MSlider*>(resource->FindWidget("CameraDistanceSlider"));
+			if (distance && slider)
+			{
+				if (sender == slider && MWidget::IsMsg(message, MLIST_VALUE_CHANGED))
+				{
+					char text[16];
+					sprintf_safe(text, "%d", slider->GetValue());
+					distance->SetText(text);
+					return true;
+				}
+				if (sender == distance && MWidget::IsMsg(message, MEDIT_CHAR_MSG))
+				{
+					slider->SetValue(CameraSettings::ParseDistance(distance->GetText(),
+						ZGetConfiguration()->GetCameraDistance()));
+					return true;
+				}
+				if (sender == resource->FindWidget("CameraDistanceResetOption") &&
+					MWidget::IsMsg(message, MBTN_CLK_MSG))
+				{
+					char text[16];
+					sprintf_safe(text, "%d", CameraSettings::DefaultDistance);
+					distance->SetText(text);
+					slider->SetValue(CameraSettings::DefaultDistance);
+					return true;
+				}
+			}
+			if (!MWidget::IsMsg(message, MBTN_CLK_MSG)) return false;
 			auto* size = static_cast<MEdit*>(resource->FindWidget("CrossHairSizeOption"));
 			auto* color = static_cast<MEdit*>(resource->FindWidget("CrossHairColorOption"));
 			if (!size || !color) return false;
@@ -836,7 +865,7 @@ void ZIDLResource::EnsureCrossHairOptions()
 			const bool decrease = sender == resource->FindWidget("CrossHairSmallerOption");
 			if (!decrease && sender != resource->FindWidget("CrossHairLargerOption")) return false;
 			const float value = CrossHairSettings::ParseSize(size->GetText(),
-				ZGetConfiguration()->CrossHairSize);
+				ZGetConfiguration()->GetCrossHairSize());
 			char text[32];
 			sprintf_safe(text, "%.2f", CrossHairSettings::ClampSize(value + (decrease ? -0.05f : 0.05f)));
 			size->SetText(text);
@@ -857,13 +886,29 @@ void ZIDLResource::EnsureCrossHairOptions()
 	addEdit("CrossHairSizeOption", 16, r.x + r.h + gap, r.y + row, r.w - 2 * (r.h + gap));
 	addButton("CrossHairLargerOption", "+", r.x + r.w - r.h, r.y + row, r.h);
 	addEdit("CrossHairColorOption", 7, r.x, r.y + 2 * row, r.w);
-	addButton("CrossHairResetOption", "Reset", r.x, r.y + 3 * row, r.w);
+	// The preview and Reset buttons occupy the column to the right of the fields.
+	const auto previewBounds = FindWidget("CrossHairPreviewCanvas") ?
+		FindWidget("CrossHairPreviewCanvas")->GetRect() : MRECT(0, 0, 48, 48);
+	const int sideWidth = std::min(previewBounds.w, parent->GetClientRect().w - r.x - r.w - 2 * gap);
+	const int sideX = parent->GetClientRect().w - sideWidth - gap;
+	addButton("CrossHairResetOption", "Reset", sideX, r.y + 2 * row, sideWidth);
+
+	addLabel("CameraDistanceLabel", "Camera distance", r.y + 3 * row);
+	const int valueWidth = std::min(3 * r.h, r.w / 2);
+	auto* distanceSlider = new MSlider("", parent, &listener);
+	distanceSlider->SetMinMax(CameraSettings::MinDistance, CameraSettings::MaxDistance);
+	distanceSlider->SetBounds(r.x, r.y + 3 * row, r.w - valueWidth - gap, r.h);
+	InsertWidget("CameraDistanceSlider", distanceSlider);
+	addEdit("CameraDistanceOption", 8, r.x + r.w - valueWidth, r.y + 3 * row, valueWidth, &listener);
+	addButton("CameraDistanceResetOption", "Reset", sideX, r.y + 3 * row, sideWidth);
 
 	// Leave the two new rows clear of the old below-selector preview.
 	if (auto* preview = FindWidget("CrossHairPreviewCanvas"))
 	{
 		auto bounds = preview->GetRect();
-		bounds.x = parent->GetClientRect().w - bounds.w - gap;
+		bounds.w = sideWidth;
+		bounds.h = std::min(bounds.h, 2 * row - gap);
+		bounds.x = sideX;
 		bounds.y = r.y;
 		preview->SetBounds(bounds);
 	}

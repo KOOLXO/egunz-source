@@ -12,6 +12,7 @@
 #include "RS2.h"
 #include "FunctionalListener.h"
 #include "CrossHairSettings.h"
+#include "ZCamera.h"
 
 #define DEFAULT_SLIDER_MAX			10000
 
@@ -120,6 +121,8 @@ void ZOptionInterface::InitInterfaceOption(void)
 
 	mlog("ZOptionInterface::InitInterfaceOption\n");
 	pResource->EnsureCrossHairOptions();
+	if (auto* slider = ZFindWidgetAs<MSlider>("CameraDistanceSlider"))
+		slider->SetValue(CameraSettings::ClampDistance(ZGetConfiguration()->CameraDistance));
 
 	Sensitivity = int(round(Z_MOUSE_SENSITIVITY * DEFAULT_SLIDER_MAX));
 
@@ -508,6 +511,8 @@ void ZOptionInterface::InitInterfaceOption(void)
 				ButtonWidget->SetCheck(ButtonInfo.second);
 		}
 
+		char StringCameraDistance[16];
+		sprintf_safe(StringCameraDistance, "%d", Cfg.CameraDistance);
 		char StringCrossHairSize[32], StringCrossHairColor[8];
 		sprintf_safe(StringCrossHairSize, "%.2f", Cfg.CrossHairSize);
 		sprintf_safe(StringCrossHairColor, "%06X", Cfg.CrossHairColor & 0xFFFFFF);
@@ -524,6 +529,7 @@ void ZOptionInterface::InitInterfaceOption(void)
 
 		std::pair<const char*, const char*> Edits[] = {
 			{"FOVOption",                 StringFOV},
+			{"CameraDistanceOption",      StringCameraDistance},
 			{"CrossHairSizeOption",       StringCrossHairSize},
 			{"CrossHairColorOption",      StringCrossHairColor},
 			{"ChatFontOption",            Cfg.GetChat()->Font.c_str()},
@@ -971,6 +977,9 @@ bool ZOptionInterface::SaveInterfaceOption(void)
 
 		using SetEditFunction = void(*)(const char*);
 		std::pair<const char*, SetEditFunction> Edits[] = {
+			{ "CameraDistanceOption", [](const char* Value) {
+				auto& Cfg = *ZGetConfiguration();
+				Cfg.CameraDistance = CameraSettings::ParseDistance(Value, Cfg.CameraDistance); } },
 			{ "CrossHairSizeOption", [](const char* Value) {
 				auto& Cfg = *ZGetConfiguration();
 				Cfg.CrossHairSize = CrossHairSettings::ParseSize(Value, Cfg.CrossHairSize); } },
@@ -1030,6 +1039,8 @@ bool ZOptionInterface::SaveInterfaceOption(void)
 		GetRGMain().GetChat().SetBackgroundColor(Cfg.GetChat()->BackgroundColor);
 
 		SetFOV(ToRadian(Cfg.FOV));
+		if (auto* camera = ZGetGameInterface()->GetCamera())
+			camera->SetDistance(Cfg.CameraDistance);
 	}
 
 	{
