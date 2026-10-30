@@ -54,6 +54,8 @@ protected:
 public:
 	void ApplyInterfaceReadability();
 	void LayoutChannelList();
+	void LayoutAdditionalScreens(const char* opening = nullptr);
+	void LayoutCharacterSelection();
 	void EnsureCrossHairOptions();
 	ZIDLResource();
 	virtual ~ZIDLResource();

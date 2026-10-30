@@ -21,8 +21,12 @@ void ZFrame::Show(bool bVisible, bool bModal)
 	}
 	m_bNextVisible = bVisible;
 
-	if (bVisible && !strcmp(m_szIDLName, "ChannelListFrame"))
-		ZGetGameInterface()->GetIDLResource()->LayoutChannelList();
+	if (bVisible)
+	{
+		auto* resource = ZGetGameInterface()->GetIDLResource();
+		if (!strcmp(m_szIDLName, "ChannelListFrame")) resource->LayoutChannelList();
+		resource->LayoutAdditionalScreens(m_szIDLName);
+	}
 	MFrame::Show(bVisible,bModal);
 	m_bVisible = true;
 	

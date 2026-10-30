@@ -48,6 +48,33 @@ inline int HudShift(int width, int height, int correctedWidth)
 {
     return HudLeft(width, height, correctedWidth) - (width - correctedWidth) / 2;
 }
+// These rectangles are shared by runtime layout and the geometry checks.
+struct Rect { int x, y, w, h; };
+struct Screen
+{
+    float scale;
+    int x, y, width, height;
+    Screen(int viewportWidth, int viewportHeight, int logicalWidth, int logicalHeight)
+        : scale(Scale(viewportWidth, viewportHeight)), x(0), y(0),
+          width(Pixels(logicalWidth, scale)), height(Pixels(logicalHeight, scale))
+    {
+        x = (viewportWidth - width) / 2; y = (viewportHeight - height) / 2;
+    }
+    Rect Child(int left, int top, int w, int h) const
+    { return {Pixels(left, scale), Pixels(top, scale), Pixels(w, scale), Pixels(h, scale)}; }
+};
+inline int ScoreboardShift(int correctedWidth)
+{
+    // The classic mesh spans approximately .245 .. .985 of the 4:3 canvas.
+    return -Pixels(.115f * correctedWidth, 1.f);
+}
+inline int ScoreboardShiftY(int height) { return -Pixels(.085f * height, 1.f); }
+inline Rect CharacterRow(int width, int height, int row)
+{
+    const float scale = Scale(width, height);
+    return {width - Pixels(560, scale), height - Pixels(480 - row * 76, scale),
+        Pixels(520, scale), Pixels(64, scale)};
+}
 struct Channel
 {
     float scale;

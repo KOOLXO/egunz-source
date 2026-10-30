@@ -1377,9 +1377,36 @@ void ZCombatInterface::DrawScoreBoard(MDrawContext* pDC)
 
 	ZSCOREBOARDITEMLIST items;
 
-	ZGetScreenEffectManager()->DrawScoreBoard();
+    const int corrected = MGetCorrectedWorkspaceWidth();
+    const int shiftX = ZUiLayout::ScoreboardShift(corrected);
+    const int shiftY = ZUiLayout::ScoreboardShiftY(MGetWorkspaceHeight());
+    ZGetScreenEffectManager()->DrawScoreBoard(float(shiftX), float(shiftY));
+    // Text, icons and row fills use Mint's origin; translate them exactly as
+    // the mesh, then restore the caller's drawing state even on an early return.
+    struct DrawState
+    {
+        MDrawContext* dc;
+        MPOINT origin;
+        MRECT clip;
+        MFont* font;
+        ~DrawState() { dc->SetOrigin(origin); dc->SetClipRect(clip); dc->SetFont(font); }
+    } state{pDC, pDC->GetOrigin(), pDC->GetClipRect(), pDC->GetFont()};
+    pDC->SetOrigin(state.origin.x + shiftX, state.origin.y + shiftY);
+    auto columnText = [pDC, corrected](float x, float y, float right, const char* text)
+    {
+        const auto origin = pDC->GetOrigin();
+        auto clip = pDC->GetClipRect();
+        const int left = (MGetWorkspaceWidth() - corrected) / 2 + int(x * corrected) + origin.x;
+        const int top = int(y * MGetWorkspaceHeight()) + origin.y;
+        MRECT column(left, top, int((right - x) * corrected), pDC->GetFont()->GetHeight() + 2);
+        MRECT visible;
+        if (!column.Intersect(&visible, clip)) return;
+        pDC->SetClipRect(visible);
+        TextRelative(pDC, x, y, text);
+        pDC->SetClipRect(clip);
+    };
 
-	MFont *pFont=GetGameFont();
+	MFont *pFont=ZUiDesign::Font();
 	pDC->SetFont(pFont);
 	pFont=pDC->GetFont();
 	pDC->SetColor(MCOLOR(TEXT_COLOR_TITLE));
@@ -1408,7 +1435,7 @@ void ZCombatInterface::DrawScoreBoard(MDrawContext* pDC)
 	{
 		sprintf_safe(szText, "(%03d) %s", ZGetGameClient()->GetStageNumber(), ZGetGameClient()->GetStageName());
 	}
-	TextRelative(pDC,0.26f,0.22f,szText);
+	columnText(.26f, .22f, .965f, szText);
 
 
 	float x = 0.27f;
@@ -1566,7 +1593,7 @@ void ZCombatInterface::DrawScoreBoard(MDrawContext* pDC)
 	const float *ITEM_XPOS = bClanGame ? clanXPOS : normalXPOS;
 
 	y=0.343f;
-	const float fHeight=0.578f;
+	const float fHeight=0.535f;
 
 	char szBuff[ 25];
 	pDC->SetColor(MCOLOR(TEXT_COLOR_TITLE));
@@ -1608,30 +1635,30 @@ void ZCombatInterface::DrawScoreBoard(MDrawContext* pDC)
 			char *szClanName = (i==0) ? m_szRedClanName : m_szBlueClanName;
 			int nClanID = (i==0) ? m_nClanIDRed : m_nClanIDBlue;
 
-			MFont *pClanFont=MFontManager::Get("FONTb11b");
+			MFont *pClanFont=ZUiDesign::Font(true);
 			if (pClanFont == NULL) _ASSERT(0);
 			pDC->SetFont(pClanFont);
 			pDC->SetColor(MCOLOR(TEXT_COLOR_CLAN_NAME));
 
 			float clancenter = .5f*(ITEM_XPOS[0]-ITEM_XPOS[1]) + ITEM_XPOS[1];
-			float clanx = clancenter - .5f*((float)pClanFont->GetWidth(szClanName)/(float)MGetWorkspaceWidth());
+			float clanx = clancenter - .5f*((float)pClanFont->GetWidth(szClanName)/(float)corrected);
 			float clany = y + linespace * ((nTeam==MMT_RED) ? .5f : 8.5f) ;
 
 			MBitmap *pbmp = ZGetEmblemInterface()->GetClanEmblem(nClanID);
 			if(pbmp) {
 				pDC->SetBitmap(pbmp);
 
-				const float fIconSize = .1f * 800.f;
+				const int fIconSize = int(.1f * corrected);
 
-				pDC->DrawRelative(clancenter - 0.5f * fIconSize, clany, fIconSize, fIconSize);
+				pDC->DrawRelative(clancenter - .05f, clany, fIconSize, fIconSize);
 
-				clany+=fIconSize+1.2*linespace;
+				clany += float(fIconSize) / MGetWorkspaceHeight() + 1.2f*linespace;
 			}
 
 			TextRelative(pDC,clanx,clany ,szClanName);
 
 			sprintf_safe(szText,"%d",g_pGame->GetMatch()->GetTeamScore(nTeam));
-			clanx = clancenter - .5f*((float)pClanFont->GetWidth(szText)/(float)MGetWorkspaceWidth());
+			clanx = clancenter - .5f*((float)pClanFont->GetWidth(szText)/(float)corrected);
 			clany+=1.f*linespace;
 			TextRelative(pDC,clanx,clany,szText);
 
@@ -1822,7 +1849,7 @@ void ZCombatInterface::DrawScoreBoard(MDrawContext* pDC)
 
 		float texty= itemy + (linespace - (float)pFont->GetHeight() / (float)MGetWorkspaceHeight())*.5f;
 		x = ITEM_XPOS[0];
-		TextRelative(pDC,x,texty,pItem->szName);
+		columnText(x, texty, bClanGame ? .65f : .46f, pItem->szName);
 
 		if(!bClanGame)
 		{
@@ -1838,8 +1865,8 @@ void ZCombatInterface::DrawScoreBoard(MDrawContext* pDC)
 					pDC->DrawRelative(x, icony, nIconSize, nIconSize);
 				}
 			}
-			x+= (float)nIconSize/(float)MGetWorkspaceWidth() +0.005f;
-			TextRelative(pDC,x,texty,pItem->szClan);
+			x+= (float)nIconSize/(float)corrected +0.005f;
+			columnText(x, texty, .64f, pItem->szClan);
 		}
 
 		if ( ZGetGameTypeManager()->IsQuestDerived( g_pGame->GetMatch()->GetMatchType()))
@@ -1852,18 +1879,18 @@ void ZCombatInterface::DrawScoreBoard(MDrawContext* pDC)
 				MCOLOR tmpColor = pDC->GetColor();
 
 				x=ITEM_XPOS[2];
-				float inv_h = 1.f / MGetWorkspaceHeight();
+				float inv_h = ZUiDesign::Scale() / MGetWorkspaceHeight();
 				pDC->SetColor( MCOLOR( 0x40FF0000));
 				pDC->FillRectangleRelative(x, texty + inv_h, 0.08, 7.f * inv_h);
 				float nValue = 0.08 * pQuestPlayerInfo->GetHP() / pQuestPlayerInfo->GetProperty()->fMaxHP;
 				pDC->SetColor( MCOLOR( 0x90FF0000));
-				pDC->FillRectangle(x, texty + inv_h, nValue, 7.f * inv_h);
+				pDC->FillRectangleRelative(x, texty + inv_h, nValue, 7.f * inv_h);
 
 				pDC->SetColor( MCOLOR( 0x4000FF00));
-				pDC->FillRectangle(x, texty + 9.f * inv_h, 0.08, 3.f * inv_h);
+				pDC->FillRectangleRelative(x, texty + 9.f * inv_h, 0.08, 3.f * inv_h);
 				nValue = 0.08 * pQuestPlayerInfo->GetAP() / pQuestPlayerInfo->GetProperty()->fMaxAP;
 				pDC->SetColor( MCOLOR( 0x9000FF00));
-				pDC->FillRectangle(x, texty + 9.f * inv_h, nValue, 3.f * inv_h);
+				pDC->FillRectangleRelative(x, texty + 9.f * inv_h, nValue, 3.f * inv_h);
 
 				pDC->SetColor( tmpColor);
 
@@ -1933,7 +1960,7 @@ void ZCombatInterface::DrawScoreBoard(MDrawContext* pDC)
 	if (count)
 	{
 		pDC->SetColor(TEXT_COLOR_TITLE);
-		TextRelative(pDC, ITEM_XPOS[0], 0.9, buf);
+		columnText(.27f, .93f, .965f, buf);
 	}
 }
 

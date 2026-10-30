@@ -47,7 +47,7 @@ bool ZScreenEffect::IsDeleteTime()
 	return false;
 }
 
-bool ZScreenEffect::DrawCustom(u64 nTime, const rvector& vOffset, float fAngle, float screenOffsetX)
+bool ZScreenEffect::DrawCustom(u64 nTime, const rvector& vOffset, float fAngle, float screenOffsetX, float screenOffsetY)
 {
 	RGetDevice()->SetRenderState(D3DRS_ZENABLE, FALSE);
 	RGetDevice()->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
@@ -78,7 +78,7 @@ bool ZScreenEffect::DrawCustom(u64 nTime, const rvector& vOffset, float fAngle, 
 		View = Scale * View;
 	}
 	
-	bool ChangeProj = ZGetConfiguration()->GetInterfaceFix() || FOV != GetFOV() || screenOffsetX != 0.f;
+	bool ChangeProj = ZGetConfiguration()->GetInterfaceFix() || FOV != GetFOV() || screenOffsetX != 0.f || screenOffsetY != 0.f;
 	if (ChangeProj)
 	{
 		OriginalProjection = RGetTransform(D3DTS_PROJECTION);
@@ -86,6 +86,7 @@ bool ZScreenEffect::DrawCustom(u64 nTime, const rvector& vOffset, float fAngle, 
 			FOV, 5, 10000);
 		// Translate the HUD mesh in clip space; preserve its proportions and animation.
 		Proj._31 += ZUiLayout::ClipShift(screenOffsetX, RGetScreenWidth(), Proj._34);
+		Proj._32 -= ZUiLayout::ClipShift(screenOffsetY, RGetScreenHeight(), Proj._34);
 		RSetTransform(D3DTS_PROJECTION, Proj);
 	}
 
@@ -1043,9 +1044,9 @@ void ZScreenEffectManager::AddExpEffect(int nExp)
 	Add(new ZScreenEffect(nExp>0 ? m_pExpPlusEffect : m_pExpMinusEffect , rvector(fOffset,0,0)));
 }
 
-void ZScreenEffectManager::DrawScoreBoard()
+void ZScreenEffectManager::DrawScoreBoard(float screenOffsetX, float screenOffsetY)
 {
-	m_pScorePanel->Draw(0);
+	m_pScorePanel->DrawCustom(0, rvector(0, 0, 0), 0.f, screenOffsetX, screenOffsetY);
 }
 
 void ZScreenEffectManager::AddAlert(const rvector& vVictimPos, const rvector& vVictimDir, const rvector& vAttackerPos)
