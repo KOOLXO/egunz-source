@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ZConfiguration.h"
+#include "CrossHairSettings.h"
 #include "Mint.h"
 #include "ZInterface.h"
 #include "ZLocatorList.h"
@@ -448,6 +449,11 @@ bool ZConfiguration::LoadConfig(const char* szFileName)
 			childElement.GetChildContents(&m_Etc.bRejectWhisper, ZTOK_ETC_REJECT_WHISPER);
 			childElement.GetChildContents(&m_Etc.bRejectInvite, ZTOK_ETC_REJECT_INVITE);
 			childElement.GetChildContents(&m_Etc.nCrossHair, ZTOK_ETC_CROSSHAIR);
+			childElement.GetChildContents(&CrossHairSize, ZTOK_ETC_CROSSHAIRSIZE);
+			CrossHairSize = CrossHairSettings::ClampSize(CrossHairSize);
+			char crossHairColor[64] = {};
+			childElement.GetChildContents(crossHairColor, ZTOK_ETC_CROSSHAIRCOLOR, sizeof(crossHairColor));
+			CrossHairColor = CrossHairSettings::ParseColor(crossHairColor, CrossHairColor);
 			childElement.GetChildContents(&bDrawTrails, ZTOK_ETC_DRAWTRAILS);
 			childElement.GetChildContents(&SlashEffect, ZTOK_ETC_SLASHEFFECT);
 			childElement.GetChildContents(&UnlockedDir, ZTOK_ETC_UNLOCKEDDIR);
@@ -696,6 +702,10 @@ bool ZConfiguration::SaveToFile(const char *szFileName, const char* szHeader)
 		Section.Add(ZTOK_ETC_REJECT_WHISPER, m_Etc.bRejectWhisper);
 		Section.Add(ZTOK_ETC_REJECT_INVITE, m_Etc.bRejectInvite);
 		Section.Add(ZTOK_ETC_CROSSHAIR, m_Etc.nCrossHair);
+		Section.Add(ZTOK_ETC_CROSSHAIRSIZE, CrossHairSettings::ClampSize(CrossHairSize));
+		char crossHairColor[8];
+		sprintf_safe(crossHairColor, "%06X", CrossHairColor & 0xFFFFFF);
+		Section.Add(ZTOK_ETC_CROSSHAIRCOLOR, crossHairColor);
 		Section.Add(ZTOK_ETC_DRAWTRAILS, bDrawTrails);
 		Section.Add(ZTOK_ETC_SLASHEFFECT, SlashEffect);
 		Section.Add(ZTOK_ETC_UNLOCKEDDIR, UnlockedDir);

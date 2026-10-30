@@ -25,6 +25,11 @@
 #include "ZStringResManager.h"
 #include "ZActionKey.h"
 #include "RGMain.h"
+#include "MEdit.h"
+#include "MLabel.h"
+#include "MButton.h"
+#include "ZConfiguration.h"
+#include "CrossHairSettings.h"
 
 ZIDLResource::ZIDLResource() = default;
 ZIDLResource::~ZIDLResource() = default;
@@ -783,4 +788,83 @@ void ZIDLResource::TransText(const char* szSrc, char* szOut, int maxlen)
 void ZGetInterfaceSkinPath(char* pOutPath, int maxlen, const char* szSkinName)
 {
 	sprintf_safe(pOutPath, maxlen, "%s%s/", PATH_INTERFACE, szSkinName);
+}
+
+
+// Add controls to existing skins without requiring a separate client XML update.
+void ZIDLResource::EnsureCrossHairOptions()
+{
+	auto* combo = FindWidget("CrossHairComboBox");
+	if (!combo || FindWidget("CrossHairSizeOption")) return;
+	auto* parent = combo->GetParent();
+	if (!parent) return;
+	const auto r = combo->GetRect();
+	const int gap = std::max(2, r.h / 4);
+	const int row = r.h + gap;
+	const int labelX = std::max(2, r.h / 12);
+	auto* editLook = static_cast<MEdit*>(FindWidget("NetworkPort1"));
+
+	auto addLabel = [&](const char* id, const char* text, int y) {
+		auto* label = new MLabel(text, parent);
+		label->SetFont(combo->GetFont());
+		label->SetBounds(labelX, y, r.x - labelX - gap, r.h);
+		InsertWidget(id, label);
+	};
+	auto addEdit = [&](const char* id, int maxLength, int x, int y, int width) {
+		auto* edit = new MEdit(maxLength, "", parent);
+		edit->SetFont(combo->GetFont());
+		if (editLook) edit->ChangeCustomLook(editLook->GetLook());
+		edit->SetBounds(x, y, width, r.h);
+		InsertWidget(id, edit);
+	};
+
+	struct CrossHairListener : MListener
+	{
+		bool OnCommand(MWidget* sender, const char* message) override
+		{
+			if (!MWidget::IsMsg(message, MBTN_CLK_MSG)) return false;
+			auto* resource = ZGetGameInterface()->GetIDLResource();
+			auto* size = static_cast<MEdit*>(resource->FindWidget("CrossHairSizeOption"));
+			auto* color = static_cast<MEdit*>(resource->FindWidget("CrossHairColorOption"));
+			if (!size || !color) return false;
+			if (sender == resource->FindWidget("CrossHairResetOption"))
+			{
+				size->SetText("1.00");
+				color->SetText("FFFFFF");
+				return true;
+			}
+			const bool decrease = sender == resource->FindWidget("CrossHairSmallerOption");
+			if (!decrease && sender != resource->FindWidget("CrossHairLargerOption")) return false;
+			const float value = CrossHairSettings::ParseSize(size->GetText(),
+				ZGetConfiguration()->CrossHairSize);
+			char text[32];
+			sprintf_safe(text, "%.2f", CrossHairSettings::ClampSize(value + (decrease ? -0.05f : 0.05f)));
+			size->SetText(text);
+			return true;
+		}
+	};
+	static CrossHairListener listener;
+	auto addButton = [&](const char* id, const char* text, int x, int y, int width) {
+		auto* button = new MButton(text, parent, &listener);
+		button->SetFont(combo->GetFont());
+		button->SetBounds(x, y, width, r.h);
+		InsertWidget(id, button);
+	};
+
+	addLabel("CrossHairSizeLabel", "Crosshair size", r.y + row);
+	addLabel("CrossHairColorLabel", "Color (#RRGGBB)", r.y + 2 * row);
+	addButton("CrossHairSmallerOption", "-", r.x, r.y + row, r.h);
+	addEdit("CrossHairSizeOption", 16, r.x + r.h + gap, r.y + row, r.w - 2 * (r.h + gap));
+	addButton("CrossHairLargerOption", "+", r.x + r.w - r.h, r.y + row, r.h);
+	addEdit("CrossHairColorOption", 7, r.x, r.y + 2 * row, r.w);
+	addButton("CrossHairResetOption", "Reset", r.x, r.y + 3 * row, r.w);
+
+	// Leave the two new rows clear of the old below-selector preview.
+	if (auto* preview = FindWidget("CrossHairPreviewCanvas"))
+	{
+		auto bounds = preview->GetRect();
+		bounds.x = parent->GetClientRect().w - bounds.w - gap;
+		bounds.y = r.y;
+		preview->SetBounds(bounds);
+	}
 }

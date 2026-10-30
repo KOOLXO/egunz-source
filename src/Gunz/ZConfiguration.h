@@ -264,6 +264,8 @@ private:
 	bool UnlockedDir{};
 	bool ShowDebugInfo{};
 	float FOV = ToDegree(DEFAULT_FOV);
+	float CrossHairSize = 1.0f;
+	u32 CrossHairColor = 0xFFFFFF;
 	bool ColorInvert{};
 	bool Monochrome{};
 };
@@ -366,6 +368,8 @@ ZConfiguration*	ZGetConfiguration();
 #define ZTOK_ETC_REJECT_WHISPER		"REJECT_WHISPER"
 #define ZTOK_ETC_REJECT_INVITE		"REJECT_INVITE"
 #define ZTOK_ETC_CROSSHAIR			"CROSSHAIR"
+#define ZTOK_ETC_CROSSHAIRSIZE "CROSSHAIRSIZE"
+#define ZTOK_ETC_CROSSHAIRCOLOR "CROSSHAIRCOLOR"
 #define ZTOK_ETC_DRAWTRAILS			"DRAWTRAILS"
 #define ZTOK_ETC_SLASHEFFECT		"SLASHEFFECT"
 #define ZTOK_ETC_UNLOCKEDDIR		"UNLOCKEDDIR"

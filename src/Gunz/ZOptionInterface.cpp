@@ -11,6 +11,7 @@
 #include "RBspObject.h"
 #include "RS2.h"
 #include "FunctionalListener.h"
+#include "CrossHairSettings.h"
 
 #define DEFAULT_SLIDER_MAX			10000
 
@@ -118,6 +119,7 @@ void ZOptionInterface::InitInterfaceOption(void)
 	ZIDLResource* pResource = ZApplication::GetGameInterface()->GetIDLResource();
 
 	mlog("ZOptionInterface::InitInterfaceOption\n");
+	pResource->EnsureCrossHairOptions();
 
 	Sensitivity = int(round(Z_MOUSE_SENSITIVITY * DEFAULT_SLIDER_MAX));
 
@@ -506,6 +508,9 @@ void ZOptionInterface::InitInterfaceOption(void)
 				ButtonWidget->SetCheck(ButtonInfo.second);
 		}
 
+		char StringCrossHairSize[32], StringCrossHairColor[8];
+		sprintf_safe(StringCrossHairSize, "%.2f", Cfg.CrossHairSize);
+		sprintf_safe(StringCrossHairColor, "%06X", Cfg.CrossHairColor & 0xFFFFFF);
 		char StringFOV[64];
 		sprintf_safe(StringFOV, "%.2f", Cfg.GetFOV());
 		char StringFontSize[64];
@@ -519,6 +524,8 @@ void ZOptionInterface::InitInterfaceOption(void)
 
 		std::pair<const char*, const char*> Edits[] = {
 			{"FOVOption",                 StringFOV},
+			{"CrossHairSizeOption",       StringCrossHairSize},
+			{"CrossHairColorOption",      StringCrossHairColor},
 			{"ChatFontOption",            Cfg.GetChat()->Font.c_str()},
 			{"ChatFontSizeOption",        StringFontSize},
 			{"ChatBackgroundColorOption", StringBackgroundColor},
@@ -964,6 +971,12 @@ bool ZOptionInterface::SaveInterfaceOption(void)
 
 		using SetEditFunction = void(*)(const char*);
 		std::pair<const char*, SetEditFunction> Edits[] = {
+			{ "CrossHairSizeOption", [](const char* Value) {
+				auto& Cfg = *ZGetConfiguration();
+				Cfg.CrossHairSize = CrossHairSettings::ParseSize(Value, Cfg.CrossHairSize); } },
+			{ "CrossHairColorOption", [](const char* Value) {
+				auto& Cfg = *ZGetConfiguration();
+				Cfg.CrossHairColor = CrossHairSettings::ParseColor(Value, Cfg.CrossHairColor); } },
 #ifdef ENABLE_FOV_OPTION
 			{ "FOVOption",      [](const char* Value) {
 				ZGetConfiguration()->FOV = atof(Value); } },

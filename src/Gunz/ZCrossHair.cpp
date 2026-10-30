@@ -10,6 +10,8 @@
 #include "MComboBox.h"
 #include "ZCanvas.h"
 #include "Config.h"
+#include "MEdit.h"
+#include "CrossHairSettings.h"
 
 ZCrossHair::ZCrossHair()
 {
@@ -173,7 +175,10 @@ void ZCrossHair::Draw(MDrawContext* pDC)
 	if(!m_bVisible) return;
 	if (g_pGame->m_pMyCharacter == NULL) return;
 
-	const float sizefactor = (float)MGetWorkspaceWidth() / (float)800  * 1.f;
+	const float sizefactor = (float)MGetWorkspaceWidth() / 800.f *
+		CrossHairSettings::ClampSize(ZGetConfiguration()->CrossHairSize);
+	const auto oldColor = pDC->GetBitmapColor();
+	pDC->SetBitmapColor(MCOLOR(0xFF000000 | ZGetConfiguration()->CrossHairColor));
 
 	MPOINT center(MGetWorkspaceWidth()/2,MGetWorkspaceHeight()/2);
 
@@ -191,7 +196,10 @@ void ZCrossHair::Draw(MDrawContext* pDC)
 		case ZCS_PICKENEMY:	
 		{
 			if (m_pPickBitmaps[CH_CENTER] != NULL)
-				DrawCrossHair(pDC, m_pPickBitmaps, center, sizefactor, fFactor); 
+			{
+				pDC->SetBitmapColor(MCOLOR(0xFFFFFFFF));
+				DrawCrossHair(pDC, m_pPickBitmaps, center, sizefactor, fFactor);
+			}
 			else DrawCrossHair(pDC, m_pBitmaps, center, sizefactor, fFactor); 
 		}
 		break;
@@ -199,6 +207,7 @@ void ZCrossHair::Draw(MDrawContext* pDC)
 #else
 	DrawCrossHair(pDC, m_pBitmaps, center, sizefactor, fFactor);
 #endif
+	pDC->SetBitmapColor(oldColor);
 }
 
 
@@ -227,11 +236,21 @@ void ZCrossHair::OnDrawOptionCrossHairPreview(void* pCanvas, MDrawContext *pDC)
 	pDC->FillRectangle(0, 0, width, height);
 	
 
-	float sizefactor = 1.0f;
+	const auto& cfg = *ZGetConfiguration();
+	float sizefactor = cfg.CrossHairSize;
+	u32 color = cfg.CrossHairColor;
+	auto* resource = ZApplication::GetGameInterface()->GetIDLResource();
+	if (auto* edit = static_cast<MEdit*>(resource->FindWidget("CrossHairSizeOption")))
+		sizefactor = CrossHairSettings::ParseSize(edit->GetText(), sizefactor);
+	if (auto* edit = static_cast<MEdit*>(resource->FindWidget("CrossHairColorOption")))
+		color = CrossHairSettings::ParseColor(edit->GetText(), color);
+	const auto oldColor = pDC->GetBitmapColor();
+	pDC->SetBitmapColor(MCOLOR(0xFF000000 | color));
 	MPOINT center(width/2,height/2);
 	float fFactor = 0.5f + 0.2f;
 
 	DrawCrossHair(pDC, pBitmaps, center, sizefactor, fFactor);
+	pDC->SetBitmapColor(oldColor);
 
 	pDC->SetColor(128, 128, 128);
 	pDC->Rectangle(0,0,width, height);
