@@ -25,6 +25,7 @@
 #include "ZStringResManager.h"
 #include "ZActionKey.h"
 #include "RGMain.h"
+#include "ZUiDesign.h"
 #include "MEdit.h"
 #include "MLabel.h"
 #include "MButton.h"
@@ -1106,4 +1107,280 @@ void ZIDLResource::EnsureCrossHairOptions()
 		preview->m_IDLRect = bounds;
 		preview->SetBounds(bounds);
 	}
+}
+
+
+namespace
+{
+void ReadableChildren(MWidget* widget)
+{
+    if (!widget) return;
+    widget->SetFont(ZUiDesign::Font());
+    const char* type = widget->GetClassName();
+    if (!strcmp(type, "TextArea"))
+        static_cast<MTextArea*>(widget)->SetLineHeight(ZUiDesign::Pixels(22));
+    else if (!strcmp(type, "ListBox") || !strcmp(type, "ComboListBox"))
+        static_cast<MListBox*>(widget)->SetItemHeight(ZUiDesign::Pixels(28));
+    for (int i = 0; i < widget->GetChildCount(); ++i)
+        ReadableChildren(widget->GetChild(i));
+}
+}
+
+void ZIDLResource::ApplyInterfaceReadability()
+{
+    // These roots use the legacy 800x600 rectangle resize pass. Give their
+    // text an independent, DPI-neutral pixel size derived from the viewport.
+    // Options and the escape menu own their fonts and are not traversed here.
+    for (const char* name : {"Lobby", "Stage"})
+        ReadableChildren(FindWidget(name));
+    LayoutChannelList();
+    LayoutAdditionalScreens();
+}
+
+void ZIDLResource::LayoutChannelList()
+{
+    auto* frame = static_cast<MFrame*>(FindWidget("ChannelListFrame"));
+    if (!frame) return;
+    const ZUiLayout::Channel layout(MGetWorkspaceWidth(), MGetWorkspaceHeight());
+    frame->ChangeCustomLook(ZUiDesign::Panel());
+    frame->SetBounds(layout.x, layout.y, layout.width, layout.height);
+    ReadableChildren(frame);
+    auto place = [this](const char* id, int x, int y, int w, int h, bool button = false)
+    {
+        auto* child = FindWidget(id);
+        if (!child) return;
+        child->SetBounds(ZUiDesign::Pixels(x), ZUiDesign::Pixels(y),
+            ZUiDesign::Pixels(w), ZUiDesign::Pixels(h));
+        if (button) static_cast<MButton*>(child)->ChangeCustomLook(ZUiDesign::Button());
+    };
+    place("ChannelList_Normal", 24, 72, 140, 40, true);
+    place("ChannelList_Private", 24, 124, 140, 40, true);
+    place("ChannelList_Clan", 24, 176, 140, 40, true);
+    place("MyClanChannel", 24, 240, 140, 40, true);
+    place("ChannelList", 184, 72, 432, 280);
+    place("PrivateChannelInput", 184, 368, 280, 36);
+    place("PrivateChannelEnter", 476, 368, 140, 36, true);
+    place("ChannelJoin", 324, 420, 140, 40, true);
+    place("ChannelListClose", 476, 420, 140, 40, true);
+    if (auto* list = static_cast<MListBox*>(FindWidget("ChannelList")))
+    {
+        list->SetItemHeight(ZUiDesign::Pixels(32));
+        // Channel names occupy the full content width, without a legacy header.
+        list->SetVisibleHeader(false);
+    }
+}
+
+namespace
+{
+// Generic IDs such as "Label" and "ParentClose" are reused by many XML files.
+// Resolve them inside their own frame, rather than the resource's global map.
+MWidget* ScreenChild(MWidget* parent, const char* id)
+{
+    if (!parent) return nullptr;
+    for (int i = 0; i < parent->GetChildCount(); ++i)
+        if (!strcmp(parent->GetChild(i)->m_szIDLName, id)) return parent->GetChild(i);
+    return nullptr;
+}
+MLabel* FieldLabel(MWidget* frame, MWidget* field)
+{
+    if (!field) return nullptr;
+    const auto anchor = field->GetIDLRect();
+    MLabel* result = nullptr;
+    int nearest = 100000;
+    for (int i = 0; i < frame->GetChildCount(); ++i)
+    {
+        auto* child = frame->GetChild(i);
+        if (strcmp(child->GetClassName(), MINT_LABEL)) continue;
+        const auto r = child->GetIDLRect();
+        const int distance = anchor.x - r.x;
+        if (abs(anchor.y - r.y) <= 2 && distance >= 0 && distance < nearest)
+        { result = static_cast<MLabel*>(child); nearest = distance; }
+    }
+    return result;
+}
+void ScreenBounds(MWidget* widget, const ZUiLayout::Rect& r)
+{
+    if (widget) widget->SetBounds(r.x, r.y, r.w, r.h);
+}
+void ScreenControl(MWidget* widget)
+{
+    if (!widget) return;
+    widget->SetFont(ZUiDesign::Font());
+    const auto* type = widget->GetClassName();
+    if (!strcmp(type, MINT_EDIT))
+        static_cast<MEdit*>(widget)->ChangeCustomLook(ZUiDesign::Edit());
+    else if (!strcmp(type, MINT_COMBOBOX))
+    {
+        auto* combo = static_cast<MComboBox*>(widget);
+        combo->ChangeCustomLook(ZUiDesign::Combo());
+        combo->SetDropSize(ZUiDesign::Pixels(216));
+    }
+    else if (!strcmp(type, MINT_COMBOLISTBOX) || !strcmp(type, MINT_LISTBOX))
+        ZUiDesign::StyleList(static_cast<MListBox*>(widget));
+    else if (!strcmp(type, MINT_BUTTON))
+        static_cast<MButton*>(widget)->ChangeCustomLook(ZUiDesign::Button());
+    else if (!strcmp(type, MINT_LABEL))
+    {
+        auto* label = static_cast<MLabel*>(widget);
+        label->SetAlignment(MAM_LEFT | MAM_VCENTER);
+        label->SetTextColor(MCOLOR(0xFFF2F5F8));
+    }
+}
+void ScreenPanel(MFrame* frame, const ZUiLayout::Screen& layout)
+{
+    frame->ChangeCustomLook(ZUiDesign::Panel());
+    frame->SetBounds(layout.x, layout.y, layout.width, layout.height);
+    for (int i = 0; i < frame->GetChildCount(); ++i) ScreenControl(frame->GetChild(i));
+}
+}
+
+void ZIDLResource::LayoutAdditionalScreens(const char* opening)
+{
+    const int width = MGetWorkspaceWidth(), height = MGetWorkspaceHeight();
+    if (!opening || !strcmp(opening, "StageCreateFrame"))
+    {
+        auto* frame = static_cast<MFrame*>(FindWidget("StageCreateFrame"));
+        if (frame)
+        {
+            const ZUiLayout::Screen layout(width, height, 640, 300);
+            ScreenPanel(frame, layout);
+            const char* fields[] = {"StageName", "StagePassword"};
+            for (int i = 0; i < 2; ++i)
+            {
+                auto* field = ScreenChild(frame, fields[i]);
+                ScreenBounds(FieldLabel(frame, field), layout.Child(24, 80 + 60*i, 152, 40));
+                ScreenBounds(field, layout.Child(184, 80 + 60*i, 432, 40));
+            }
+            ScreenBounds(ScreenChild(frame, "StageCreateBtn"), layout.Child(320, 232, 140, 44));
+            ScreenBounds(ScreenChild(frame, "ParentClose"), layout.Child(476, 232, 140, 44));
+        }
+    }
+    if (!opening || !strcmp(opening, "Replay") || !strcmp(opening, "ReplayGroup"))
+    {
+        auto* root = FindWidget("Replay");
+        auto* frame = static_cast<MFrame*>(FindWidget("ReplayGroup"));
+        if (root && frame)
+        {
+            root->SetBounds(0, 0, width, height);
+            const ZUiLayout::Screen layout(width, height, 900, 620);
+            ScreenPanel(frame, layout);
+            int labelIndex = 0;
+            for (int i = 0; i < frame->GetChildCount(); ++i)
+            {
+                auto* child = frame->GetChild(i);
+                if (strcmp(child->GetClassName(), MINT_LABEL)) continue;
+                const int y = labelIndex == 0 ? 72 : 488 + (labelIndex - 1)*26;
+                ScreenBounds(child, layout.Child(24, y, 852, 26));
+                ++labelIndex;
+            }
+            auto* list = static_cast<MListBox*>(ScreenChild(frame, "Replay_FileList"));
+            ScreenBounds(list, layout.Child(24, 112, 852, 360));
+            if (list)
+            {
+                list->SetVisibleHeader(false);
+                // Older skins supplied a half-width filename column. Versions
+                // are no longer populated by the replay loader; use the full row.
+                list->RemoveAllField();
+                list->m_bAbsoulteTabSpacing = true;
+            }
+            ScreenBounds(ScreenChild(frame, "Replay_View"), layout.Child(580, 552, 140, 44));
+            ScreenBounds(ScreenChild(frame, "ReplayClose"), layout.Child(736, 552, 140, 44));
+        }
+    }
+    if (!opening || !strcmp(opening, "StageSettingFrame"))
+    {
+        auto* frame = static_cast<MFrame*>(FindWidget("StageSettingFrame"));
+        if (frame)
+        {
+            const ZUiLayout::Screen layout(width, height, 1000, 600);
+            ScreenPanel(frame, layout);
+            const char* combos[] = {"StageLimitTime", "StageIntrude", "StageTeamKill", "StageLevelLimit",
+                "StageTeamBalancing", "StageObserver", "StageVote", "StageNetcode"};
+            for (int i = 0; i < 8; ++i)
+            {
+                auto* field = ScreenChild(frame, combos[i]);
+                ScreenBounds(FieldLabel(frame, field), layout.Child(24, 80 + 48*i, 176, 36));
+                ScreenBounds(field, layout.Child(208, 80 + 48*i, 328, 36));
+                if (field) static_cast<MComboBox*>(field)->SetDropSize((std::min)(
+                    ZUiDesign::Pixels(216), layout.height - ZUiDesign::Pixels(140 + 48*i)));
+            }
+            const char* checks[] = {"StageNoFlip", "StageSwordsOnly", "StageVanillaMode",
+                "StageInvulnerabilityStates", "StageForceHPAP"};
+            for (int i = 0; i < 5; ++i)
+            {
+                auto* field = static_cast<MButton*>(ScreenChild(frame, checks[i]));
+                if (!field) continue;
+                if (auto* label = FieldLabel(frame, field))
+                {
+                    field->SetText(label->GetText());
+                    label->SetBounds(0, 0, 0, 0);
+                }
+                field->ChangeCustomLook(ZUiDesign::Check());
+                ScreenBounds(field, layout.Child(584, 80 + 48*i + (i == 4 ? 28 : 0), 392, 36));
+            }
+            const char* values[] = {"StageHP", "StageAP"};
+            for (int i = 0; i < 2; ++i)
+            {
+                auto* field = ScreenChild(frame, values[i]);
+                ScreenBounds(FieldLabel(frame, field), layout.Child(584 + 196*i, 372, 48, 40));
+                ScreenBounds(field, layout.Child(640 + 196*i, 372, 132, 40));
+            }
+            ScreenBounds(ScreenChild(frame, "StageSettingApplyBtn"), layout.Child(680, 532, 140, 44));
+            ScreenBounds(ScreenChild(frame, "ParentClose"), layout.Child(836, 532, 140, 44));
+        }
+    }
+    if (!opening || !strcmp(opening, "CharSelection")) LayoutCharacterSelection();
+}
+
+void ZIDLResource::LayoutCharacterSelection()
+{
+    const int width = MGetWorkspaceWidth(), height = MGetWorkspaceHeight();
+    int rowIndex = 0;
+    for (int i = 0; i < MAX_CHAR_COUNT; ++i)
+    {
+        char id[64];
+        sprintf_safe(id, "CharSel_Name%d", i);
+        auto* name = static_cast<MLabel*>(FindWidget(id));
+        const auto row = ZUiLayout::CharacterRow(width, height, rowIndex);
+        // The account can have gaps in slot numbers. Pack occupied rows together.
+        if (name && name->GetText()[0]) ++rowIndex;
+        sprintf_safe(id, "CharSel_Selectbar%d", i);
+        ScreenBounds(FindWidget(id), row);
+        sprintf_safe(id, "CharSel_SelectBtn%d", i);
+        ScreenBounds(FindWidget(id), row);
+        if (name)
+        {
+            name->SetFont(ZUiDesign::Font(true));
+            name->SetAlignment(MAM_LEFT | MAM_VCENTER);
+            name->SetBounds(row.x + ZUiDesign::Pixels(18), row.y + ZUiDesign::Pixels(4),
+                ZUiDesign::Pixels(360), ZUiDesign::Pixels(32));
+        }
+        sprintf_safe(id, "CharSel_Level%d", i);
+        auto* level = static_cast<MLabel*>(FindWidget(id));
+        if (level)
+        {
+            level->SetFont(ZUiDesign::Font()); level->SetAlignment(MAM_RIGHT | MAM_VCENTER);
+            level->SetBounds(row.x + ZUiDesign::Pixels(390), row.y + ZUiDesign::Pixels(4),
+                ZUiDesign::Pixels(112), ZUiDesign::Pixels(32));
+        }
+        sprintf_safe(id, "CharSel_ClanName%d", i);
+        if (auto* clan = FindWidget(id))
+        {
+            clan->SetFont(ZUiDesign::Font());
+            clan->SetBounds(row.x + ZUiDesign::Pixels(18), row.y + ZUiDesign::Pixels(36),
+                row.w - ZUiDesign::Pixels(36), ZUiDesign::Pixels(24));
+        }
+    }
+    // Keep the skin's bitmap actions; enlarge their drawing and actual hit bounds.
+    const char* actions[] = {"CS_CreateChar", "CS_DeleteChar", "CS_SelectChar", "CS_Prev"};
+    const int left[] = {40, 320, 0, 0};
+    for (int i = 0; i < 4; ++i)
+    {
+        if (auto* button = FindWidget(actions[i]))
+        {
+            const int x = i < 2 ? ZUiDesign::Pixels(left[i]) : width - ZUiDesign::Pixels(i == 2 ? 520 : 240);
+            button->SetFont(ZUiDesign::Font());
+            button->SetBounds(x, height - ZUiDesign::Pixels(76), ZUiDesign::Pixels(200), ZUiDesign::Pixels(44));
+        }
+    }
 }
