@@ -122,7 +122,7 @@ public:
         auto r = arrow->GetInitialClientRect();
         dc->SetColor(MCOLOR(0xFF262F3C)); dc->FillRectangle(r);
         dc->SetFont(&TextFont); dc->SetColor(MCOLOR(0xFFF2F5F8));
-        dc->Text(r, arrow->m_nDirection == 2 ? "-" : "+", MAM_HCENTER | MAM_VCENTER);
+        dc->Text(r, (arrow->m_nDirection == 0 || arrow->m_nDirection == 3) ? "-" : "+", MAM_HCENTER | MAM_VCENTER);
     }
     MRECT GetClientRect(MArrow*, MRECT& r) override { return r; }
     MSIZE GetDefaultSize(MArrow*) override { return MSIZE(Pixels(28), Pixels(32)); }

@@ -801,9 +801,16 @@ void ZIDLResource::EnsureCrossHairOptions()
 	if (!parent) return;
 	// Layout uses the XML's unscaled logical coordinates, as OptionsReadability does.
 	const auto logical = combo->GetIDLRect();
-	const auto r = logical.w > 0 && logical.h > 0 ? logical : combo->GetRect();
+	auto r = logical.w > 0 && logical.h > 0 ? logical : combo->GetRect();
 	const auto parentLogical = parent->GetIDLRect();
 	const int parentWidth = parentLogical.w > 0 ? parentLogical.w : parent->GetClientRect().w;
+	// Reserve a larger actual-size preview without pushing fields into the footer.
+	if (parentWidth >= 600 && r.w > 160)
+	{
+		r.w -= 64;
+		combo->m_IDLRect = r;
+		combo->SetBounds(r);
+	}
 	auto registerControl = [&](const char* id, MWidget* widget) {
 		strcpy_safe(widget->m_szIDLName, id);
 		widget->m_IDLRect = widget->GetRect();
@@ -895,28 +902,78 @@ void ZIDLResource::EnsureCrossHairOptions()
 	addEdit("CrossHairSizeOption", 16, r.x + r.h + gap, r.y + row, r.w - 2 * (r.h + gap));
 	addButton("CrossHairLargerOption", "+", r.x + r.w - r.h, r.y + row, r.h);
 	addEdit("CrossHairColorOption", 7, r.x, r.y + 2 * row, r.w);
-	// The preview and Reset buttons occupy the column to the right of the fields.
+	// Reserve a separate preview column; Reset shares the color row.
 	const auto previewBounds = FindWidget("CrossHairPreviewCanvas") ?
 		FindWidget("CrossHairPreviewCanvas")->GetIDLRect() : MRECT(0, 0, 48, 48);
-	const int sideWidth = std::min(previewBounds.w, parentWidth - r.x - r.w - 2 * gap);
+	const int sideWidth = std::min(std::max(previewBounds.w, 120), parentWidth - r.x - r.w - 2 * gap);
 	const int sideX = parentWidth - sideWidth - gap;
-	addButton("CrossHairResetOption", "Reset", sideX, r.y + 2 * row, sideWidth);
+	addButton("CrossHairResetOption", "Reset", r.x + r.w - 3 * r.h, r.y + 2 * row, 3 * r.h);
+	if (auto* color = FindWidget("CrossHairColorOption"))
+	{
+		auto bounds = color->GetIDLRect();
+		bounds.w -= 3 * r.h + gap;
+		color->m_IDLRect = bounds;
+		color->SetBounds(bounds);
+	}
 
-	addLabel("CameraDistanceLabel", "Camera distance", r.y + 3 * row);
-	const int valueWidth = std::min(3 * r.h, r.w / 2);
-	auto* distanceSlider = new MSlider("", parent, &listener);
-	distanceSlider->SetMinMax(CameraSettings::MinDistance, CameraSettings::MaxDistance);
-	distanceSlider->SetBounds(r.x, r.y + 3 * row, r.w - valueWidth - gap, r.h);
-	registerControl("CameraDistanceSlider", distanceSlider);
-	addEdit("CameraDistanceOption", 8, r.x + r.w - valueWidth, r.y + 3 * row, valueWidth, &listener);
-	addButton("CameraDistanceResetOption", "Reset", sideX, r.y + 3 * row, sideWidth);
+	// Put distance alongside the existing field-of-view control, in its own tab.
+	if (auto* fov = FindWidget("FOVOption"))
+	{
+		auto* cameraParent = fov->GetParent();
+		if (!cameraParent) return;
+		const auto anchor = fov->GetIDLRect();
+		const auto area = cameraParent->GetIDLRect();
+		const int height = std::max(24, anchor.h);
+		const int spacing = std::max(6, height / 4);
+		const int width = area.w;
+		// Find a full free row below FOV rather than overwrite another skin control.
+		int y = anchor.y + anchor.h + spacing;
+		for (bool collision = true; collision;)
+		{
+			collision = false;
+			for (int i = 0; i < cameraParent->GetChildCount(); ++i)
+			{
+				const auto occupied = cameraParent->GetChild(i)->GetIDLRect();
+				if (occupied.w > 0 && occupied.h > 0 && occupied.y < y + height &&
+					occupied.y + occupied.h > y)
+				{
+					y = occupied.y + occupied.h + spacing;
+					collision = true;
+				}
+			}
+		}
+		if (width >= 400 && y + height <= area.h)
+		{
+			const int labelWidth = width / 3;
+			const int valueWidth = 3 * height;
+			const int resetWidth = 3 * height;
+			const int sliderX = labelWidth + spacing;
+			const int resetX = width - resetWidth - spacing;
+			const int valueX = resetX - spacing - valueWidth;
+			auto* label = new MLabel("Camera distance", cameraParent);
+			label->SetBounds(spacing, y, labelWidth - spacing, height);
+			registerControl("CameraDistanceLabel", label);
+			auto* slider = new MSlider("", cameraParent, &listener);
+			slider->SetMinMax(CameraSettings::MinDistance, CameraSettings::MaxDistance);
+			slider->SetBounds(sliderX, y, valueX - spacing - sliderX, height);
+			registerControl("CameraDistanceSlider", slider);
+			auto* value = new MEdit(8, "", cameraParent, &listener);
+			if (editLook) value->ChangeCustomLook(editLook->GetLook());
+			value->SetBounds(valueX, y, valueWidth, height);
+			registerControl("CameraDistanceOption", value);
+			auto* reset = new MButton("Reset", cameraParent, &listener);
+			reset->SetBounds(resetX, y, resetWidth, height);
+			registerControl("CameraDistanceResetOption", reset);
+		}
+	}
 
-	// Leave the two new rows clear of the old below-selector preview.
+	// Show the preview at actual size across the height of the crosshair section.
 	if (auto* preview = FindWidget("CrossHairPreviewCanvas"))
 	{
 		auto bounds = previewBounds;
 		bounds.w = sideWidth;
-		bounds.h = std::min(bounds.h, 2 * row - gap);
+		bounds.h = 3 * row - gap;
+		// Reset shares the color row, leaving the preview its full height.
 		bounds.x = sideX;
 		bounds.y = r.y;
 		preview->m_IDLRect = bounds;

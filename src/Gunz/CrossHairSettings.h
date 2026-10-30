@@ -15,6 +15,12 @@ inline float ClampSize(float value)
 	return value < MinSize ? MinSize : (value > MaxSize ? MaxSize : value);
 }
 
+// Both gameplay and the settings preview draw in screen pixels.
+inline float PixelScale(int screenWidth, float size)
+{
+	return screenWidth / 800.f * ClampSize(size);
+}
+
 inline float ParseSize(const char* text, float fallback = 1.0f)
 {
 	if (!text || !*text) return ClampSize(fallback);

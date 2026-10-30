@@ -2,10 +2,19 @@
 #include "../src/Gunz/CrossHairSettings.h"
 #include <cassert>
 #include <limits>
+#include <initializer_list>
 
 int main()
 {
 	using namespace CrossHairSettings;
+	// A preview must retain the gameplay pixel scale, including fractional sizes.
+	for (int width : {800, 1280, 1920, 2560, 3840})
+		for (float size : {0.30f, 1.00f, 3.00f})
+		{
+			const float expected = width / 800.f * size;
+			assert(std::fabs(PixelScale(width, size) - expected) < 0.00001f);
+			assert(PixelScale(width, size) == PixelScale(width, ParseSize(size == 0.30f ? "0.30" : size == 1.f ? "1.00" : "3.00")));
+		}
 	assert(ParseSize("0.75") == 0.75f);
 	assert(ParseSize("3") == MaxSize);
 	assert(ParseSize("-1") == MinSize);

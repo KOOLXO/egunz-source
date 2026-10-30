@@ -175,8 +175,8 @@ void ZCrossHair::Draw(MDrawContext* pDC)
 	if(!m_bVisible) return;
 	if (g_pGame->m_pMyCharacter == NULL) return;
 
-	const float sizefactor = (float)MGetWorkspaceWidth() / 800.f *
-		CrossHairSettings::ClampSize(ZGetConfiguration()->GetCrossHairSize());
+	const float sizefactor = CrossHairSettings::PixelScale(MGetWorkspaceWidth(),
+		ZGetConfiguration()->GetCrossHairSize());
 	const auto oldColor = pDC->GetBitmapColor();
 	pDC->SetBitmapColor(MCOLOR(0xFF000000 | ZGetConfiguration()->GetCrossHairColor()));
 
@@ -247,7 +247,10 @@ void ZCrossHair::OnDrawOptionCrossHairPreview(void* pCanvas, MDrawContext *pDC)
 	const auto oldColor = pDC->GetBitmapColor();
 	pDC->SetBitmapColor(MCOLOR(0xFF000000 | color));
 	MPOINT center(width/2,height/2);
-	float fFactor = 0.5f + 0.2f;
+	// Match gameplay pixels and the current weapon spread; do not shrink to fit the box.
+	sizefactor = CrossHairSettings::PixelScale(MGetWorkspaceWidth(), sizefactor);
+	const float fFactor = (g_pGame && g_pGame->m_pMyCharacter ?
+		g_pGame->m_pMyCharacter->GetCAFactor() : 0.5f) + 0.2f;
 
 	DrawCrossHair(pDC, pBitmaps, center, sizefactor, fFactor);
 	pDC->SetBitmapColor(oldColor);
