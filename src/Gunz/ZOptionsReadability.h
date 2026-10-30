@@ -7,6 +7,8 @@
 #include "MSlider.h"
 #include "MTabCtrl.h"
 #include "Mint.h"
+#include "MEdit.h"
+#include "CrossHairSettings.h"
 
 // Option.xml is a 960 x 680 logical layout. Restore it on each resize;
 // never derive a new layout from already scaled widget coordinates.
@@ -63,6 +65,34 @@ public:
         dc->SetColor(MCOLOR(selected ? 0xFF45C2D1 : 0xFF3B4655)); dc->Rectangle(r);
         dc->SetFont(&TextFont); dc->SetColor(MCOLOR(0xFFF2F5F8));
         r.x += Pixels(8); r.w -= Pixels(16);
+        dc->Text(r, button->GetText(), MAM_HCENTER | MAM_VCENTER);
+    }
+    MRECT GetClientRect(MButton*, const MRECT& r) override { return r; }
+};
+class ColorButtonLook : public MButtonLook
+{
+public:
+    void OnDraw(MButton* button, MDrawContext* dc) override
+    {
+        const char* ids[] = {"CrossHairSwatchWhite", "CrossHairSwatchGreen", "CrossHairSwatchCyan",
+            "CrossHairSwatchYellow", "CrossHairSwatchRed", "CrossHairSwatchPink"};
+        u32 color = 0xFFFFFF;
+        if (!strcmp(button->m_szIDLName, "CrossHairColorButton"))
+        {
+            auto* resource = ZGetGameInterface()->GetIDLResource();
+            if (auto* hex = static_cast<MEdit*>(resource->FindWidget("CrossHairColorOption")))
+                color = CrossHairSettings::ParseColor(hex->GetText(), ZGetConfiguration()->GetCrossHairColor());
+        }
+        else
+            for (int i = 0; i < 6; ++i)
+                if (!strcmp(button->m_szIDLName, ids[i])) color = CrossHairSettings::PresetColor(i);
+        auto r = button->GetInitialClientRect();
+        dc->SetColor(MCOLOR(0xFF000000 | color)); dc->FillRectangle(r);
+        dc->SetColor(MCOLOR(button->IsMouseOver() ? 0xFF45C2D1 : 0xFF8C9BAA)); dc->Rectangle(r);
+        const int brightness = int((color >> 16) & 255) * 299 +
+            int((color >> 8) & 255) * 587 + int(color & 255) * 114;
+        dc->SetFont(&TextFont);
+        dc->SetColor(MCOLOR(brightness >= 128000 ? 0xFF111820 : 0xFFF2F5F8));
         dc->Text(r, button->GetText(), MAM_HCENTER | MAM_VCENTER);
     }
     MRECT GetClientRect(MButton*, const MRECT& r) override { return r; }
@@ -145,6 +175,7 @@ public:
 static ContentLook Content;
 static PanelLook Panel;
 static ButtonLook Button;
+static ColorButtonLook ColorButton;
 static CheckLook Check;
 static ComboLook Combo;
 static SliderLook Slider;
@@ -166,7 +197,10 @@ static void LayoutChildren(MWidget* parent)
             auto* button = static_cast<MButton*>(child);
             const char* id = child->m_szIDLName;
             const bool tab = !strncmp(id, "Show", 4) || !strncmp(id, "ControlTabBtn", 13) || !strncmp(id, "OptionsAdvancedTab", 18);
-            button->ChangeCustomLook(button->GetType() == MBT_NORMAL || tab ? static_cast<MButtonLook*>(&Button) : &Check);
+            if (!strncmp(id, "CrossHairSwatch", 15) || !strcmp(id, "CrossHairColorButton"))
+                button->ChangeCustomLook(&ColorButton);
+            else
+                button->ChangeCustomLook(button->GetType() == MBT_NORMAL || tab ? static_cast<MButtonLook*>(&Button) : &Check);
         }
         else if (!strcmp(type, "ComboBox"))
         {
@@ -235,12 +269,15 @@ static void Apply(bool opening = false)
         for (const char* name : {"OptionTabControl", "ControlTabControl", "OptionsAdvancedTabControl"})
             if (auto* tab = resource->FindWidget(name)) static_cast<MTabCtrl*>(tab)->SetSelIndex(0);
     }
-    for (const char* name : {"ResizeConfirm", "ViewConfirm", "NetworkPortConfirm"})
+    for (const char* name : {"ResizeConfirm", "ViewConfirm", "NetworkPortConfirm", "CrossHairColorPicker"})
     {
         auto* popup = resource->FindWidget(name);
         if (!popup) continue;
         static_cast<MFrame*>(popup)->ChangeCustomLook(&Panel);
-        popup->SetBounds((screenW - Pixels(560)) / 2, (screenH - Pixels(260)) / 2, Pixels(560), Pixels(260));
+        const bool colorPicker = !strcmp(name, "CrossHairColorPicker");
+        const int width = colorPicker ? 640 : 560, height = colorPicker ? 480 : 260;
+        popup->SetBounds((screenW - Pixels(width)) / 2, (screenH - Pixels(height)) / 2, Pixels(width), Pixels(height));
+        if (opening && colorPicker) popup->Show(false);
         LayoutChildren(popup);
     }
 }

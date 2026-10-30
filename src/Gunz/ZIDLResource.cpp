@@ -31,6 +31,9 @@
 #include "MSlider.h"
 #include "ZConfiguration.h"
 #include "CrossHairSettings.h"
+#include "ZSettingsSlider.h"
+#include "MFrame.h"
+#include "ZCrossHair.h"
 
 ZIDLResource::ZIDLResource() = default;
 ZIDLResource::~ZIDLResource() = default;
@@ -838,9 +841,85 @@ void ZIDLResource::EnsureCrossHairOptions()
 
 	struct CrossHairListener : MListener
 	{
+		u32 previousColor = 0xFFFFFF;
+		bool syncingColor = false;
+		void SyncColor(ZIDLResource* resource, u32 color, bool writeHex = true)
+		{
+			syncingColor = true;
+			char text[16];
+			if (writeHex)
+			{
+				sprintf_safe(text, "%06X", color & 0xFFFFFF);
+				static_cast<MEdit*>(resource->FindWidget("CrossHairColorOption"))->SetText(text);
+			}
+			const char* sliders[] = {"CrossHairRedSlider", "CrossHairGreenSlider", "CrossHairBlueSlider"};
+			const char* values[] = {"CrossHairRedValue", "CrossHairGreenValue", "CrossHairBlueValue"};
+			for (int i = 0; i < 3; ++i)
+			{
+				const int channel = (color >> (16 - 8 * i)) & 255;
+				static_cast<MSlider*>(resource->FindWidget(sliders[i]))->SetValue(channel);
+				sprintf_safe(text, "%d", channel);
+				static_cast<MEdit*>(resource->FindWidget(values[i]))->SetText(text);
+			}
+			syncingColor = false;
+		}
 		bool OnCommand(MWidget* sender, const char* message) override
 		{
 			auto* resource = ZGetGameInterface()->GetIDLResource();
+			auto* hex = static_cast<MEdit*>(resource->FindWidget("CrossHairColorOption"));
+			auto* picker = resource->FindWidget("CrossHairColorPicker");
+			if (hex && picker && !syncingColor)
+			{
+				const bool click = MWidget::IsMsg(message, MBTN_CLK_MSG);
+				const u32 current = CrossHairSettings::ParseColor(hex->GetText(),
+					ZGetConfiguration()->GetCrossHairColor());
+				if (click && sender == resource->FindWidget("CrossHairColorButton"))
+				{
+					previousColor = current;
+					SyncColor(resource, current);
+					picker->Show(true, true);
+					return true;
+				}
+				if (click && (sender == resource->FindWidget("CrossHairColorAccept") ||
+					sender == resource->FindWidget("CrossHairColorCancel")))
+				{
+					SyncColor(resource, sender == resource->FindWidget("CrossHairColorCancel") ?
+						previousColor : current);
+					picker->Show(false);
+					return true;
+				}
+				const char* swatches[] = {"CrossHairSwatchWhite", "CrossHairSwatchGreen", "CrossHairSwatchCyan",
+					"CrossHairSwatchYellow", "CrossHairSwatchRed", "CrossHairSwatchPink"};
+				for (int i = 0; i < 6; ++i)
+					if (click && sender == resource->FindWidget(swatches[i]))
+					{
+						SyncColor(resource, CrossHairSettings::PresetColor(i));
+						return true;
+					}
+				if (sender == hex && MWidget::IsMsg(message, MEDIT_CHAR_MSG))
+				{
+					SyncColor(resource, current, false);
+					return true;
+				}
+				const char* sliders[] = {"CrossHairRedSlider", "CrossHairGreenSlider", "CrossHairBlueSlider"};
+				const char* values[] = {"CrossHairRedValue", "CrossHairGreenValue", "CrossHairBlueValue"};
+				for (int i = 0; i < 3; ++i)
+				{
+					auto* channel = static_cast<MSlider*>(resource->FindWidget(sliders[i]));
+					auto* value = static_cast<MEdit*>(resource->FindWidget(values[i]));
+					const bool fromSlider = sender == channel && MWidget::IsMsg(message, MLIST_VALUE_CHANGED);
+					const bool fromEdit = sender == value && MWidget::IsMsg(message, MEDIT_CHAR_MSG);
+					if (fromSlider || fromEdit)
+					{
+						const int amount = fromSlider ? channel->GetValue() :
+							CrossHairSettings::ParseChannel(value->GetText(), channel->GetValue());
+						const int shift = 16 - 8 * i;
+						SyncColor(resource, (current & ~(255u << shift)) | (u32(amount) << shift));
+						return true;
+					}
+				}
+			}
+
 			auto* distance = static_cast<MEdit*>(resource->FindWidget("CameraDistanceOption"));
 			auto* slider = static_cast<MSlider*>(resource->FindWidget("CameraDistanceSlider"));
 			if (distance && slider)
@@ -897,24 +976,72 @@ void ZIDLResource::EnsureCrossHairOptions()
 	};
 
 	addLabel("CrossHairSizeLabel", "Crosshair size", r.y + row);
-	addLabel("CrossHairColorLabel", "Color (#RRGGBB)", r.y + 2 * row);
+	addLabel("CrossHairColorLabel", "Crosshair color", r.y + 2 * row);
 	addButton("CrossHairSmallerOption", "-", r.x, r.y + row, r.h);
 	addEdit("CrossHairSizeOption", 16, r.x + r.h + gap, r.y + row, r.w - 2 * (r.h + gap));
 	addButton("CrossHairLargerOption", "+", r.x + r.w - r.h, r.y + row, r.h);
-	addEdit("CrossHairColorOption", 7, r.x, r.y + 2 * row, r.w);
+	addButton("CrossHairColorButton", "Choose...", r.x, r.y + 2 * row, r.w - 3 * r.h - gap);
 	// Reserve a separate preview column; Reset shares the color row.
 	const auto previewBounds = FindWidget("CrossHairPreviewCanvas") ?
 		FindWidget("CrossHairPreviewCanvas")->GetIDLRect() : MRECT(0, 0, 48, 48);
 	const int sideWidth = std::min(std::max(previewBounds.w, 120), parentWidth - r.x - r.w - 2 * gap);
 	const int sideX = parentWidth - sideWidth - gap;
 	addButton("CrossHairResetOption", "Reset", r.x + r.w - 3 * r.h, r.y + 2 * row, 3 * r.h);
-	if (auto* color = FindWidget("CrossHairColorOption"))
+	// An in-game modal keeps custom color selection inside the client.
+	if (auto* overlay = FindWidget("Option"))
 	{
-		auto bounds = color->GetIDLRect();
-		bounds.w -= 3 * r.h + gap;
-		color->m_IDLRect = bounds;
-		color->SetBounds(bounds);
+		auto* picker = new MFrame("Crosshair color", overlay, &listener);
+		picker->SetMovable(false);
+		picker->SetResizable(false);
+		picker->SetBounds(0, 0, 640, 480);
+		registerControl("CrossHairColorPicker", picker);
+		auto label = [&](const char* id, const char* text, int x, int y, int w) {
+			auto* widget = new MLabel(text, picker);
+			widget->SetBounds(x, y, w, 32);
+			registerControl(id, widget);
+		};
+		auto button = [&](const char* id, const char* text, int x, int y, int w, int h = 32) {
+			auto* widget = new MButton(text, picker, &listener);
+			widget->SetBounds(x, y, w, h);
+			registerControl(id, widget);
+		};
+		label("CrossHairColorHint", "Choose a swatch or adjust a custom color", 24, 72, 592);
+		const char* names[] = {"White", "Green", "Cyan", "Yellow", "Red", "Pink"};
+		const char* ids[] = {"CrossHairSwatchWhite", "CrossHairSwatchGreen", "CrossHairSwatchCyan",
+			"CrossHairSwatchYellow", "CrossHairSwatchRed", "CrossHairSwatchPink"};
+		for (int i = 0; i < 6; ++i) button(ids[i], names[i], 24 + i * 100, 116, 88, 40);
+		const char* labels[] = {"Red", "Green", "Blue"};
+		const char* labelIDs[] = {"CrossHairRedLabel", "CrossHairGreenLabel", "CrossHairBlueLabel"};
+		const char* sliders[] = {"CrossHairRedSlider", "CrossHairGreenSlider", "CrossHairBlueSlider"};
+		const char* values[] = {"CrossHairRedValue", "CrossHairGreenValue", "CrossHairBlueValue"};
+		for (int i = 0; i < 3; ++i)
+		{
+			const int y = 184 + i * 52;
+			label(labelIDs[i], labels[i], 24, y, 72);
+			auto* slider = new ZSettingsSlider("", picker, &listener);
+			slider->SetMinMax(0, 255);
+			slider->SetBounds(104, y, 224, 32);
+			registerControl(sliders[i], slider);
+			auto* edit = new MEdit(3, "", picker, &listener);
+			if (editLook) edit->ChangeCustomLook(editLook->GetLook());
+			edit->SetBounds(340, y, 60, 32);
+			registerControl(values[i], edit);
+		}
+		label("CrossHairHexLabel", "Hex", 24, 356, 72);
+		auto* hex = new MEdit(7, "FFFFFF", picker, &listener);
+		if (editLook) hex->ChangeCustomLook(editLook->GetLook());
+		hex->SetBounds(104, 356, 168, 32);
+		registerControl("CrossHairColorOption", hex);
+		label("CrossHairColorPreviewLabel", "Actual-size preview", 424, 328, 192);
+		auto* preview = new ZCanvas("", picker);
+		preview->SetBounds(424, 176, 192, 144);
+		preview->SetOnDrawCallback(ZCrossHair::OnDrawOptionCrossHairPreview);
+		registerControl("CrossHairColorPreview", preview);
+		button("CrossHairColorCancel", "Cancel", 368, 432, 112);
+		button("CrossHairColorAccept", "Use color", 496, 432, 120);
+		picker->Show(false);
 	}
+
 
 	// Put distance alongside the existing field-of-view control, in its own tab.
 	if (auto* fov = FindWidget("FOVOption"))
@@ -953,7 +1080,7 @@ void ZIDLResource::EnsureCrossHairOptions()
 			auto* label = new MLabel("Camera distance", cameraParent);
 			label->SetBounds(spacing, y, labelWidth - spacing, height);
 			registerControl("CameraDistanceLabel", label);
-			auto* slider = new MSlider("", cameraParent, &listener);
+			auto* slider = new ZSettingsSlider("", cameraParent, &listener);
 			slider->SetMinMax(CameraSettings::MinDistance, CameraSettings::MaxDistance);
 			slider->SetBounds(sliderX, y, valueX - spacing - sliderX, height);
 			registerControl("CameraDistanceSlider", slider);
