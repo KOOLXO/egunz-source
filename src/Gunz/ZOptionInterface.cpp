@@ -13,6 +13,7 @@
 #include "FunctionalListener.h"
 #include "CrossHairSettings.h"
 #include "ZCamera.h"
+#include "ZOptionsReadability.h"
 
 #define DEFAULT_SLIDER_MAX			10000
 
@@ -565,6 +566,7 @@ void ZOptionInterface::InitInterfaceOption(void)
 #endif
 	}
 
+	OptionsReadability::Apply(true);
 	//mlog("ZGameInterface::InitInterfaceOption ok\n");
 }
 
@@ -1606,6 +1608,7 @@ void ZOptionInterface::Resize(int w, int h)
 		ZGetCombatInterface()->Resize(w, h);
 
 	GetRGMain().Resize(w, h);
+	OptionsReadability::Apply();
 }
 
 void ZOptionInterface::GetOldScreenResolution()
@@ -1755,7 +1758,7 @@ BEGIN_IMPLEMENT_LISTENER(ZGetSaveOptionButtonListener, MBTN_CLK_MSG)
 		MTabCtrl* pTab = (MTabCtrl*)pResource->FindWidget("OptionTabControl");
 
 		if(pTab) {//키보드 옵션은 키입력을 막아준다.
-			if(pTab->GetSelIndex()==3)//이름을 찾아 조사
+			if(OptionsReadability::ControlsSelected(pResource))//이름을 찾아 조사
 				return true;
 		}
 	}
@@ -1802,7 +1805,7 @@ BEGIN_IMPLEMENT_LISTENER(ZGetCancelOptionButtonListener, MBTN_CLK_MSG)
 		MTabCtrl* pTab = (MTabCtrl*)pResource->FindWidget("OptionTabControl");
 
 		if(pTab) {//키보드 옵션은 키입력을 막아준다.
-			if(pTab->GetSelIndex()==3)//이름을 찾아 조사
+			if(OptionsReadability::ControlsSelected(pResource))//이름을 찾아 조사
 				return true;
 		}
 	}

@@ -55,6 +55,8 @@ public:
 
 	char	szIMECompositionString[MIMECOMPOSITIONSTRING_LENGTH];
 	char	szIMECompositionResultString[MIMECOMPOSITIONSTRING_LENGTH];
+	// Fixed storage: MWidget copies MEvent with memcpy.
+	wchar_t wszIMECompositionResultString[MIMECOMPOSITIONSTRING_LENGTH] = {};
 	static bool	bIMESupport;
 public:
 

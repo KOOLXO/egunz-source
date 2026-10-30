@@ -7,6 +7,8 @@
 #include "defer.h"
 #include "MClipboard.h"
 #include "CodePageConversion.h"
+#include "Mint.h"
+#include "ZConfiguration.h"
 
 namespace ResizeFlagsType
 {
@@ -283,6 +285,8 @@ Chat::~Chat() = default;
 void Chat::EnableInput(bool Enable, bool ToTeam){
 	InputEnabled = Enable;
 	TeamChat = ToTeam;
+	if (MEvent::GetIMESupport())
+		Mint::GetInstance()->EnableIME(Enable);
 
 	if (Enable){
 		InputField.clear();
@@ -456,6 +460,23 @@ std::pair<bool, v2i> Chat::GetPos(const ChatMessage &c, u32 Pos)
 }
 
 bool Chat::OnEvent(MEvent* pEvent) {
+	if (pEvent->nMessage == MWM_IMECOMPOSE) {
+		if (!InputEnabled) return false;
+		const auto* result = pEvent->wszIMECompositionResultString;
+		const size_t length = wcslen(result);
+		if (length && InputField.size() <= MAX_INPUT_LENGTH &&
+			length <= MAX_INPUT_LENGTH - InputField.size()) {
+			const size_t position = CaretPos < 0 ? 0 :
+				min(size_t(CaretPos) + 1, InputField.size());
+			InputField.insert(position, result, length);
+			CaretPos = int(position + length) - 1;
+			const auto caret = GetCaretPos(DefaultFont, InputField.c_str(),
+				CaretPos, Border.x2 - (Border.x1 + 5));
+			InputHeight = caret.TotalTextHeight;
+			CaretCoord = caret.CaretPos;
+		}
+		return true;
+	}
 	// We want to open the chat when the chat action key is pressed and close it when enter is pressed.
 	// This is because a chat action key bound to something other than enter still has to be
 	// inputtable. E.g., if it's bound to 'y', the user still has to be able to input 'y'.
@@ -1143,6 +1164,11 @@ void Chat::DrawBackground(MDrawContext* pDC, TimeType Time, int Limit, bool Show
 						Rect.y1 = max(Rect.y1, Output.y1);
 					}
 				}
+
+				// EGunZ: give passive chat messages vertical breathing room.
+				const int Padding = max(2, FontHeight / 6);
+				Rect.y1 = max<LONG>(0, Rect.y1 - Padding);
+				Rect.y2 = min<LONG>(RGetScreenHeight(), Rect.y2 + Padding);
 
 				pDC->SetColor(BackgroundColor);
 				pDC->FillRectangle(MakeMRECT(Rect));

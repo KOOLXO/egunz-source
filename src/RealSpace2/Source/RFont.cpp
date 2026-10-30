@@ -17,8 +17,11 @@
 
 _NAMESPACE_REALSPACE2_BEGIN
 
-constexpr auto RFONT_TEXTURE_SIZE = 512;
-constexpr auto RFONT_CELL_SIZE = 32;
+// EGunZ: 4K/DPI-scaled chat glyphs exceed the old 32-pixel cells.
+// Keep 16x16 cache slots while allowing complete large glyph bitmaps.
+constexpr auto RFONT_TEXTURE_SIZE = 2048;
+constexpr auto RFONT_CELL_SIZE = 128;
+static_assert(RFONT_TEXTURE_SIZE / RFONT_CELL_SIZE == 16, "Preserve font cache capacity");
 
 RFontTexture::RFontTexture() 
 { 

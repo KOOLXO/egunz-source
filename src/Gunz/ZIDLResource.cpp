@@ -799,7 +799,16 @@ void ZIDLResource::EnsureCrossHairOptions()
 	if (!combo || FindWidget("CrossHairSizeOption")) return;
 	auto* parent = combo->GetParent();
 	if (!parent) return;
-	const auto r = combo->GetRect();
+	// Layout uses the XML's unscaled logical coordinates, as OptionsReadability does.
+	const auto logical = combo->GetIDLRect();
+	const auto r = logical.w > 0 && logical.h > 0 ? logical : combo->GetRect();
+	const auto parentLogical = parent->GetIDLRect();
+	const int parentWidth = parentLogical.w > 0 ? parentLogical.w : parent->GetClientRect().w;
+	auto registerControl = [&](const char* id, MWidget* widget) {
+		strcpy_safe(widget->m_szIDLName, id);
+		widget->m_IDLRect = widget->GetRect();
+		InsertWidget(id, widget);
+	};
 	const int gap = std::max(2, r.h / 4);
 	// Compact rows leave room for all controls above the existing Save/Cancel buttons.
 	const int row = r.h;
@@ -810,14 +819,14 @@ void ZIDLResource::EnsureCrossHairOptions()
 		auto* label = new MLabel(text, parent);
 		label->SetFont(combo->GetFont());
 		label->SetBounds(labelX, y, r.x - labelX - gap, r.h);
-		InsertWidget(id, label);
+		registerControl(id, label);
 	};
 	auto addEdit = [&](const char* id, int maxLength, int x, int y, int width, MListener* listener = nullptr) {
 		auto* edit = new MEdit(maxLength, "", parent, listener);
 		edit->SetFont(combo->GetFont());
 		if (editLook) edit->ChangeCustomLook(editLook->GetLook());
 		edit->SetBounds(x, y, width, r.h);
-		InsertWidget(id, edit);
+		registerControl(id, edit);
 	};
 
 	struct CrossHairListener : MListener
@@ -877,7 +886,7 @@ void ZIDLResource::EnsureCrossHairOptions()
 		auto* button = new MButton(text, parent, &listener);
 		button->SetFont(combo->GetFont());
 		button->SetBounds(x, y, width, r.h);
-		InsertWidget(id, button);
+		registerControl(id, button);
 	};
 
 	addLabel("CrossHairSizeLabel", "Crosshair size", r.y + row);
@@ -888,9 +897,9 @@ void ZIDLResource::EnsureCrossHairOptions()
 	addEdit("CrossHairColorOption", 7, r.x, r.y + 2 * row, r.w);
 	// The preview and Reset buttons occupy the column to the right of the fields.
 	const auto previewBounds = FindWidget("CrossHairPreviewCanvas") ?
-		FindWidget("CrossHairPreviewCanvas")->GetRect() : MRECT(0, 0, 48, 48);
-	const int sideWidth = std::min(previewBounds.w, parent->GetClientRect().w - r.x - r.w - 2 * gap);
-	const int sideX = parent->GetClientRect().w - sideWidth - gap;
+		FindWidget("CrossHairPreviewCanvas")->GetIDLRect() : MRECT(0, 0, 48, 48);
+	const int sideWidth = std::min(previewBounds.w, parentWidth - r.x - r.w - 2 * gap);
+	const int sideX = parentWidth - sideWidth - gap;
 	addButton("CrossHairResetOption", "Reset", sideX, r.y + 2 * row, sideWidth);
 
 	addLabel("CameraDistanceLabel", "Camera distance", r.y + 3 * row);
@@ -898,18 +907,19 @@ void ZIDLResource::EnsureCrossHairOptions()
 	auto* distanceSlider = new MSlider("", parent, &listener);
 	distanceSlider->SetMinMax(CameraSettings::MinDistance, CameraSettings::MaxDistance);
 	distanceSlider->SetBounds(r.x, r.y + 3 * row, r.w - valueWidth - gap, r.h);
-	InsertWidget("CameraDistanceSlider", distanceSlider);
+	registerControl("CameraDistanceSlider", distanceSlider);
 	addEdit("CameraDistanceOption", 8, r.x + r.w - valueWidth, r.y + 3 * row, valueWidth, &listener);
 	addButton("CameraDistanceResetOption", "Reset", sideX, r.y + 3 * row, sideWidth);
 
 	// Leave the two new rows clear of the old below-selector preview.
 	if (auto* preview = FindWidget("CrossHairPreviewCanvas"))
 	{
-		auto bounds = preview->GetRect();
+		auto bounds = previewBounds;
 		bounds.w = sideWidth;
 		bounds.h = std::min(bounds.h, 2 * row - gap);
 		bounds.x = sideX;
 		bounds.y = r.y;
+		preview->m_IDLRect = bounds;
 		preview->SetBounds(bounds);
 	}
 }
