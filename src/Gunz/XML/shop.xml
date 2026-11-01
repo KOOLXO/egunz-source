@@ -110,6 +110,9 @@
 	<SELL itemid="9004" />
 	<SELL itemid="9005" />
 
+	<!-- SNIPER RIFLE -->
+	<SELL itemid="10001" />
+
 	<!-- MACHINEGUN -->
 	<SELL itemid="8001" />
 	<SELL itemid="8002" />

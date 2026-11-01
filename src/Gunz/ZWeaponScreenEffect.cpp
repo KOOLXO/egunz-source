@@ -17,7 +17,6 @@ ZWeaponScreenEffect::~ZWeaponScreenEffect()
 
 void ZWeaponScreenEffect::Draw(MDrawContext* pDC)
 {
-	return;
 
 	switch (m_nWeaponType)
 	{
@@ -36,7 +35,6 @@ void ZWeaponScreenEffect::Draw(MDrawContext* pDC)
 
 void ZWeaponScreenEffect::InitWeapon(MMatchWeaponType nWeaponType)
 {
-	return;
 
 	switch (nWeaponType)
 	{
@@ -51,13 +49,12 @@ void ZWeaponScreenEffect::InitWeapon(MMatchWeaponType nWeaponType)
 
 void ZWeaponScreenEffect::FinalWeapon(MMatchWeaponType nWeaponType)
 {
-	return;
 
 	switch (nWeaponType)
 	{
 	case MWT_SNIFER:
 		{
-		SetFOV(70.0f / 180.0f * PI_FLOAT);
+		SetFOV(ToRadian(ZGetConfiguration()->GetFOV()));
 		}
 		break;
 	}
@@ -65,7 +62,6 @@ void ZWeaponScreenEffect::FinalWeapon(MMatchWeaponType nWeaponType)
 
 void ZWeaponScreenEffect::OnGadget(MMatchWeaponType nWeaponType)
 {
-	return;
 
 	if (m_nWeaponType == nWeaponType) return;
 	if (m_nWeaponType != MWT_NONE) OnGadgetOff();
@@ -76,7 +72,6 @@ void ZWeaponScreenEffect::OnGadget(MMatchWeaponType nWeaponType)
 
 void ZWeaponScreenEffect::OnGadgetOff()
 {
-	return;
 
 	FinalWeapon(m_nWeaponType);
 	m_nWeaponType = MWT_NONE;
@@ -84,7 +79,6 @@ void ZWeaponScreenEffect::OnGadgetOff()
 
 void ZWeaponScreenEffect::Create()
 {
-	return;
 
 	MMatchWeaponType nPrimaryWeaponType = MWT_NONE, 
 					 nSecondaryWeaponType = MWT_NONE, 
@@ -124,7 +118,6 @@ void ZWeaponScreenEffect::Create()
 
 void ZWeaponScreenEffect::Destroy()
 {
-	return;
 
 	if (m_pSniferPanel)
 	{
