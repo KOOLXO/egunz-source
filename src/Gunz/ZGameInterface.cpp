@@ -1342,6 +1342,7 @@ void ZGameInterface::OnLobbyCreate()
 	if (pWidget)
 		pWidget->SetFocus();
 
+	m_IDLResource.ApplyInterfaceReadability();
 	if (m_pBackground)
 		m_pBackground->SetScene(LOGIN_SCENE_FIXEDCHAR);
 }
@@ -3524,6 +3525,15 @@ void ZGameInterface::OnCharCreationCreate()
 	m_pCharacterSelectView->SetBackground(m_pBackground);
 	m_pCharacterSelectView->SetState(ZCharacterSelectView::ZCSVS_CREATE);
 	m_pCharacterSelectView->OnChangedCharCostume();
+
+    // MFrame::OnShow initially focuses its first child (a caption). Give the
+    // required edit focus after showing the form and initializing the preview.
+    m_IDLResource.LayoutCharacterCreation();
+    if (auto* name = static_cast<MEdit*>(m_IDLResource.FindWidget("CC_CharName")))
+    {
+        if (name->GetMaxLength() != MAX_CHARNAME + 1) name->SetMaxLength(MAX_CHARNAME);
+        name->SetFocus();
+    }
 }
 
 void ZGameInterface::OnCharCreationDestroy()

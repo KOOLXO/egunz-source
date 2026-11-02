@@ -1314,44 +1314,22 @@ void ZOptionInterface::OptimizationVideoOption()
 	}
 }
 
-bool ZOptionInterface::ResizeWidgetRecursive( MWidget* pWidget, int w, int h)
+bool ZOptionInterface::ResizeWidgetRecursive(MWidget* widget, int w, int h)
 {
-	ZIDLResource* pResource = ZApplication::GetGameInterface()->GetIDLResource();
-
-	//MWidget* pWidget = pResource->FindWidget(szName);
-	if(pWidget==NULL) return false;
-	int n = pWidget->GetChildCount();
-	for( int i = 0; i < n; ++i)
-	{
-		MWidget* pChildWidget = pWidget->GetChild(i);
-		ResizeWidgetRecursive( pChildWidget, w, h );
-	}
-
-	// idl에서 읽어서 적절한 값을 가지고 있는 위젯이라면 그값으로 리사이즈한다
-	if(pWidget->GetIDLRect().w>0 && pWidget->GetIDLRect().h>0)	
-	{
-		// idl 에서는 800x600 기준으로 기술되어있다
-		const float tempWidth = ((float)RGetScreenWidth()) / 800;
-		const float tempHeight = ((float)RGetScreenHeight()) / 600;
-
-		MRECT r=pWidget->GetIDLRect();
-		r.x*=tempWidth;
-		r.w*=tempWidth;
-		r.y*=tempHeight;
-		r.h*=tempHeight;
-		pWidget->SetBounds(r);
-	}
-	else 
-	{
-		const float tempWidth = ((float)RGetScreenWidth()) / mOldScreenWidth;
-		const float tempHeight = ((float)RGetScreenHeight()) / mOldScreenHeight;
-		MPOINT p = pWidget->GetPosition();
-		p.Scale( tempWidth, tempHeight );
-		pWidget->SetPosition( p );
-		MRECT r=pWidget->GetRect();
-		pWidget->SetSize( r.w*tempWidth, r.h*tempHeight );
-	}
-	return true;
+    if (!widget) return false;
+    const auto original = widget->GetIDLRect();
+    if (original.w > 0 && original.h > 0)
+    {
+        const float sx = w / 800.f, sy = h / 600.f;
+        widget->SetBounds(int(original.x * sx), int(original.y * sy),
+            int(original.w * sx), int(original.h * sy));
+    }
+    // Parent SetBounds triggers anchors and OnSize. Restore XML children after
+    // that pass so their positions are not scaled twice by their parent's anchors.
+    // Generated controls (scrollbar thumbs, etc.) keep their owner's layout.
+    for (int i = 0; i < widget->GetChildCount(); ++i)
+        ResizeWidgetRecursive(widget->GetChild(i), w, h);
+    return true;
 }
 
 
@@ -1568,13 +1546,9 @@ bool ZOptionInterface::ResizeWidget(const char* szName, int w, int h)
 
 	else if(_stricmp( szName, "CharCreation")==0)
 	{
-		MRECT rect;
-		rect = pWidget->GetRect();
-		rect.x = 50 * ( RGetScreenWidth() / 800.0f);
-		rect.y = (int)((RGetScreenHeight() - rect.h) / 2.0f);
-		pWidget->SetBounds( rect);
-
-		return true;
+        // Shared layout owns this form after the viewport resize pass.
+        // Do not keep the old fixed-pixel size or move it over the preview.
+        return true;
 	}
 	else if(_stricmp( szName, "GameResult")==0)
 		ResizeWidgetRecursive( pWidget, w, h );
@@ -1608,6 +1582,7 @@ void ZOptionInterface::Resize(int w, int h)
 		ZGetCombatInterface()->Resize(w, h);
 
 	GetRGMain().Resize(w, h);
+	ZGetGameInterface()->GetIDLResource()->ApplyInterfaceReadability();
 	OptionsReadability::Apply();
 }
 

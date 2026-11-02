@@ -589,6 +589,10 @@ void ZCharacterSelectView::UpdateInterface(int nSelIndex)
 
 	for ( int i = 0; i < MAX_CHAR_COUNT; i++)
 	{
+        sprintf_safe(szName, "CharSel_Selectbar%d", i);
+        if (auto* row = static_cast<MPicture*>(pResource->FindWidget(szName)))
+            row->SetBitmapColor(MCOLOR(i == nSelIndex ? 0xFFFFFFFF : 0xFF65717D));
+
 		sprintf_safe( szName, "CharSel_Name%d", i);
 		pLabel = (MLabel*)pResource->FindWidget( szName);
 		if ( pLabel)
@@ -812,6 +816,7 @@ void ZCharacterSelectView::OnReceivedAccountCharInfo(void* pCharListBlob)
 
 	// 내가 정말 뉴비인지 체크
 	if (nCharMaxLevel <= 1) ZGetMyInfo()->SetNewbie(true);
+	ZApplication::GetGameInterface()->GetIDLResource()->LayoutCharacterSelection();
 }
 
 

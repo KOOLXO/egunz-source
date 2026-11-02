@@ -24,7 +24,11 @@ int MListBox::GetItemHeight()
 
 void MListBox::SetItemHeight(int nHeight)
 {
-	m_nItemHeight = nHeight;
+    if (m_nItemHeight == nHeight) return;
+    m_nItemHeight = nHeight;
+    // Drawing and hit testing already use the new height. Update the visible
+    // row count and scroll range too, including when bounds did not change.
+    RecalcList();
 }
 
 int MListBox::FindItem(MPOINT& p)

@@ -75,7 +75,7 @@ void ZPlayerListBoxLook::OnDraw(MListBox* pListBox, MDrawContext* pDC)
 
 	m_SelectedPlaneColor = MCOLOR(180,220,180);
 
-	int nItemHeight = 23*fA;
+	int nItemHeight = pListBox->GetItemHeight();
 	int nShowCount = 0;
 
 	auto ClientRect = pListBox->GetClientRect();
