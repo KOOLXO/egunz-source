@@ -63,6 +63,22 @@ struct Screen
     Rect Child(int left, int top, int w, int h) const
     { return {Pixels(left, scale), Pixels(top, scale), Pixels(w, scale), Pixels(h, scale)}; }
 };
+struct CharacterCreation : Screen
+{
+    CharacterCreation(int w, int h) : Screen(w, h, 560, 680)
+    {
+        // The scene renders the character toward the left. Keep the complete
+        // form beside it and derive every rectangle from the current viewport.
+        x = w - width - Pixels(40, scale);
+    }
+    int FieldY(int row) const { return row == 0 ? 80 : 140 + (row - 1) * 52; }
+    Rect Caption(int row) const { return Child(24, FieldY(row), 136, row == 0 ? 44 : 40); }
+    Rect Field(int row) const { return Child(176, FieldY(row), 360, row == 0 ? 44 : 40); }
+    Rect EquipmentCaption(int row) const { return Child(24, 400 + row * 28, 136, 26); }
+    Rect Equipment(int row) const { return Child(176, 400 + row * 28, 360, 26); }
+    Rect Action(int index) const { return Child(236 + index * 156, 612, 144, 44); }
+    Rect EquipmentHeading() const { return Child(24, 364, 512, 28); }
+};
 inline int ScoreboardShift(int correctedWidth)
 {
     // The classic mesh spans approximately .245 .. .985 of the 4:3 canvas.

@@ -56,6 +56,7 @@ public:
 	void LayoutChannelList();
 	void LayoutAdditionalScreens(const char* opening = nullptr);
 	void LayoutCharacterSelection();
+	void LayoutCharacterCreation();
 	void EnsureCrossHairOptions();
 	ZIDLResource();
 	virtual ~ZIDLResource();

@@ -147,3 +147,37 @@ cannot validate rendered Windows fonts or the installed skin.
 Shop/inventory redesign and the separately reported intermittent glyph/UI
 corruption after changing resolution remain deferred. This follow-up does not
 claim to resolve that renderer/resource-reset issue.
+
+## Character Creation form
+
+The separate `CharCreation` dialog now uses the shared charcoal panel, cyan
+accent, bordered inputs and readable fonts. Its old resize branch moved a
+253x367-pixel window without scaling its children; that branch now defers to
+the shared layout applied after resize and before showing the form.
+
+The new form is 560x680 logical pixels at 1080p, placed to the right of the
+scene preview with a 40-pixel right margin. Name is an explicit bordered edit,
+with automatic focus when entering creation and the existing 16-byte limit.
+Sex, Hair, Face and Starter set each have a separate caption/value row. Five
+read-only equipment values fit in the panel next to their slot captions.
+Create and Cancel use 144x44 targets, clean labels, Enter/Escape and the
+original O/C accelerators. Existing preview updates, name validation, creation
+request/response handlers and server equipment behavior are retained.
+
+Geometry checks cover every form caption, input, equipment value and button;
+row separation; right-edge placement; font-height allowance; and reopening
+at each tested resolution. At 4K the panel is 1120x1360 and the name field is
+88 pixels high. Windows compilation and in-game acceptance remain required.
+
+After pulling the branch, build and deploy the executable using the confirmed
+steps above. Test a fresh launch at 1080p, 1440p and 4K:
+
+1. Character Selection > Create opens the dark/cyan form beside the character.
+   The Name field is visible and accepts typing immediately.
+2. Enter a valid 3–16-byte ASCII name. Change Sex/Hair/Face/Starter set and check
+   the model and equipment labels; the typed name must remain intact.
+3. Test the Create button and Enter using spare character slots. Confirm the
+   new character appears after the account list refresh. Test a duplicate or
+   invalid name and confirm error feedback leaves the form usable.
+4. Test Cancel and Escape; neither should create a character. Reopen and test
+   dropdown scrolling, row selection, full button click bounds, and resizing.

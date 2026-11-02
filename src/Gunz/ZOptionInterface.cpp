@@ -1546,13 +1546,9 @@ bool ZOptionInterface::ResizeWidget(const char* szName, int w, int h)
 
 	else if(_stricmp( szName, "CharCreation")==0)
 	{
-		MRECT rect;
-		rect = pWidget->GetRect();
-		rect.x = 50 * ( RGetScreenWidth() / 800.0f);
-		rect.y = (int)((RGetScreenHeight() - rect.h) / 2.0f);
-		pWidget->SetBounds( rect);
-
-		return true;
+        // Shared layout owns this form after the viewport resize pass.
+        // Do not keep the old fixed-pixel size or move it over the preview.
+        return true;
 	}
 	else if(_stricmp( szName, "GameResult")==0)
 		ResizeWidgetRecursive( pWidget, w, h );

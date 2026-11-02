@@ -1232,6 +1232,28 @@ void ScreenPanel(MFrame* frame, const ZUiLayout::Screen& layout)
     frame->SetBounds(layout.x, layout.y, layout.width, layout.height);
     for (int i = 0; i < frame->GetChildCount(); ++i) ScreenControl(frame->GetChild(i));
 }
+class CharacterCreationPanelLook : public ZUiDesign::PanelLook
+{
+public:
+    void OnDraw(MFrame* frame, MDrawContext* dc) override
+    {
+        ZUiDesign::PanelLook::OnDraw(frame, dc);
+        const ZUiLayout::CharacterCreation layout(MGetWorkspaceWidth(), MGetWorkspaceHeight());
+        const auto heading = layout.EquipmentHeading();
+        dc->SetColor(MCOLOR(0xFF3B4655));
+        dc->HLine(heading.x, ZUiDesign::Pixels(352), heading.w);
+        dc->HLine(heading.x, ZUiDesign::Pixels(592), heading.w);
+        dc->SetFont(ZUiDesign::Font()); dc->SetColor(MCOLOR(0xFFF2F5F8));
+        dc->Text(MRECT(heading.x, heading.y, heading.w, heading.h), "Starting equipment", MAM_LEFT | MAM_VCENTER);
+        const char* captions[] = {"Melee", "Primary", "Secondary", "Item 1", "Item 2"};
+        dc->SetColor(MCOLOR(0xFFB6C2CC));
+        for (int i = 0; i < 5; ++i)
+        {
+            const auto r = layout.EquipmentCaption(i);
+            dc->Text(MRECT(r.x, r.y, r.w, r.h), captions[i], MAM_LEFT | MAM_VCENTER);
+        }
+    }
+};
 }
 
 void ZIDLResource::LayoutAdditionalScreens(const char* opening)
@@ -1330,6 +1352,57 @@ void ZIDLResource::LayoutAdditionalScreens(const char* opening)
         }
     }
     if (!opening || !strcmp(opening, "CharSelection")) LayoutCharacterSelection();
+    if (!opening || !strcmp(opening, "CharCreation")) LayoutCharacterCreation();
+}
+
+void ZIDLResource::LayoutCharacterCreation()
+{
+    auto* frame = static_cast<MFrame*>(FindWidget("CharCreation"));
+    if (!frame) return;
+    const ZUiLayout::CharacterCreation layout(MGetWorkspaceWidth(), MGetWorkspaceHeight());
+    ScreenPanel(frame, layout);
+    static CharacterCreationPanelLook panel;
+    frame->ChangeCustomLook(&panel);
+
+    const char* fields[] = {"CC_CharName", "CC_Sex", "CC_Hair", "CC_Face", "CC_Costume"};
+    for (int i = 0; i < 5; ++i)
+    {
+        auto* field = ScreenChild(frame, fields[i]);
+        auto* label = FieldLabel(frame, field);
+        ScreenBounds(label, layout.Caption(i));
+        ScreenBounds(field, layout.Field(i));
+        if (i == 0)
+        {
+            // Restore the existing required name row even with a skin that hid
+            // it. Its bordered edit look makes the input area unambiguous.
+            if (label) label->Show(true);
+            if (field) { field->Show(true); field->Enable(true); field->SetFocusEnable(true); }
+        }
+        if (i == 4 && label) label->SetText("Starter set");
+    }
+
+    const char* equipment[] = {"CC_MeleeLabel", "CC_PrimaryLabel", "CC_SecondaryLabel", "CC_Item1Label", "CC_Item2Label"};
+    for (int i = 0; i < 5; ++i)
+    {
+        auto* item = static_cast<MLabel*>(ScreenChild(frame, equipment[i]));
+        ScreenBounds(item, layout.Equipment(i));
+        if (item) item->SetTextColor(MCOLOR(0xFFB6C2CC));
+    }
+    const char* actions[] = {"CC_CreateChar", "CC_Cancel"};
+    const char* titles[] = {"Create", "Cancel"};
+    for (int i = 0; i < 2; ++i)
+    {
+        auto* button = static_cast<MButton*>(ScreenChild(frame, actions[i]));
+        ScreenBounds(button, layout.Action(i));
+        if (button)
+        {
+            button->SetText(titles[i]);
+            button->m_nKeyAssigned = i == 0 ? MBKA_ENTER : MBKA_ESC;
+            // Retain the original OK/Cancel accelerators while showing clean
+            // labels instead of literal "(&O)" / "(&C)" text in the new look.
+            button->SetAccelerator(i == 0 ? 'O' : 'C');
+        }
+    }
 }
 
 void ZIDLResource::LayoutCharacterSelection()

@@ -38,6 +38,44 @@ int main()
             assert(content.x + content.w <= screen.width);
             assert(content.y + content.h <= screen.height);
         }
+        // Creation is a form beside the scene, with all controls inside it.
+        // Exercise the exact rectangles used by the runtime, including the
+        // five read-only equipment values that overflowed the legacy frame.
+        const ZUiLayout::CharacterCreation creation(w,h);
+        assert(creation.x >= 0 && creation.y >= 0);
+        assert(creation.x + creation.width <= w && creation.y + creation.height <= h);
+        assert(w - creation.x - creation.width == ZUiLayout::Pixels(40,scale));
+        auto insideCreation = [&creation](const ZUiLayout::Rect& r)
+        {
+            assert(r.x >= 0 && r.y >= 0 && r.w > 0 && r.h > 0);
+            assert(r.x + r.w <= creation.width);
+            assert(r.y + r.h <= creation.height);
+        };
+        int fieldBottom = 0, itemBottom = 0;
+        for (int i = 0; i < 5; ++i)
+        {
+            const auto caption = creation.Caption(i), field = creation.Field(i);
+            const auto itemCaption = creation.EquipmentCaption(i), item = creation.Equipment(i);
+            insideCreation(caption); insideCreation(field);
+            insideCreation(itemCaption); insideCreation(item);
+            assert(caption.x + caption.w < field.x);
+            assert(field.y >= fieldBottom);
+            assert(itemCaption.x + itemCaption.w < item.x);
+            assert(item.y >= itemBottom);
+            assert(item.h - 2 >= (std::max)(8,ZUiLayout::Pixels(16,scale)));
+            fieldBottom = field.y + field.h;
+            itemBottom = item.y + item.h;
+        }
+        const auto heading = creation.EquipmentHeading();
+        insideCreation(heading);
+        assert(fieldBottom < heading.y && heading.y + heading.h < creation.Equipment(0).y);
+        for (int i = 0; i < 2; ++i) insideCreation(creation.Action(i));
+        assert(itemBottom < creation.Action(0).y);
+        assert(creation.Action(0).x + creation.Action(0).w < creation.Action(1).x);
+        // Reopening/resizing must not depend on a previous scaled rectangle.
+        const ZUiLayout::CharacterCreation reopened(w,h);
+        assert(reopened.Field(0).x == creation.Field(0).x);
+        assert(reopened.Action(1).y == creation.Action(1).y);
         // Four full-height character targets must stay separated and above the
         // bottom actions even at 800x600 and when revisiting a prior resolution.
         int previousBottom = 0;
@@ -101,5 +139,8 @@ int main()
     assert(ZUiLayout::Pixels(16,ZUiLayout::Scale(2560,1440)) == 21);
     assert(ZUiLayout::Pixels(16,ZUiLayout::Scale(3840,2160)) == 32);
     assert(ZUiLayout::HudLeft(3840,2160,2880) == 32);
+    const ZUiLayout::CharacterCreation creation4k(3840,2160);
+    assert(creation4k.width == 1120 && creation4k.height == 1360);
+    assert(creation4k.Field(0).h == 88);
     std::cout << "Popup, character row, scoreboard, DPI and HUD layout checks passed\n";
 }
