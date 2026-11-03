@@ -330,6 +330,10 @@ void ZMyBotCharacter::OnUpdate(float Delta)
 	}
 	else
 	{
+		// A local bot has no incoming peer packets. Keep its timestamp current so
+		// the inherited disconnected-peer check does not clear hit velocity.
+		UpdateTimeOffset(g_pGame->GetTime(), g_pGame->GetTime());
+
 		// Unlike a remote character, the training bot must simulate its own hit motion.
 		UpdateVelocity(Delta);
 		m_pModule_Movable->OnUpdate(Delta);
