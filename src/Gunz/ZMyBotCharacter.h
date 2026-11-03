@@ -25,6 +25,8 @@ public:
 		float fDamage, float fPiercingRatio = 1.f, int nMeleeType = -1) override;
 	virtual void OnDamagedAnimation(ZObject *pAttacker, int type) override;
 	virtual void OnKnockback(const rvector& dir, float fForce) override;
+	void OnBlast(rvector& dir) override;
+	void UpdateAnimation() override;
 	virtual bool GetHistory(v3* Pos, v3* Dir, float Time, v3* CameraDir = nullptr) override;
 
 	void RecordCommand(MCommand* Command);
