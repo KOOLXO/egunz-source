@@ -91,6 +91,9 @@
 	<SELL itemid="6005" />
 	<SELL itemid="6006" />
 	<SELL itemid="6007" />
+	<!-- EGunZ Training Shotguns (950 ms) -->
+	<SELL itemid="806001" />
+	<SELL itemid="806002" />
 
 	<!-- RIFLE -->
 	<SELL itemid="7001" />

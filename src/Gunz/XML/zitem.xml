@@ -542,6 +542,21 @@
 		lr="0" color="#FFFFFFFF" image_id="2" bullet_image_id="0" magazine_image_id="0" snd_reload="we_shotgunpa_reload"
 		snd_fire="we_shotgunpa_fire" snd_dryfire="762arifle_dryfire" desc="STR:ZITEM_DESC_6007"
 		effect_id="7" />
+	<!-- EGunZ Training Shotguns (950 ms; independent IDs for dual equip) -->
+	<ITEM id="806001" name="Training Shotgun II" mesh_name="shotgun01" totalpoint="0" type="range"
+		res_sex="a" res_level="0" slot="range" weapon="shotgun" weight="18" bt_price="0"
+		delay="950" damage="6" ctrl_ability="60" magazine="1000" maxbullet="50" reloadtime="5"
+		slug_output="true" gadget_id="0" hp="0" ap="0" maxwt="0" sf="0" fr="0" cr="0" pr="0"
+		lr="0" color="#FFFFFFFF" image_id="2" bullet_image_id="0" magazine_image_id="0" snd_reload="we_shotgunpa_reload"
+		snd_fire="we_shotgunpa_fire" snd_dryfire="762arifle_dryfire" desc="Training Time"
+		effect_id="7" />
+	<ITEM id="806002" name="Training Shotgun III" mesh_name="shotgun01" totalpoint="0" type="range"
+		res_sex="a" res_level="0" slot="range" weapon="shotgun" weight="18" bt_price="0"
+		delay="950" damage="6" ctrl_ability="60" magazine="1000" maxbullet="50" reloadtime="5"
+		slug_output="true" gadget_id="0" hp="0" ap="0" maxwt="0" sf="0" fr="0" cr="0" pr="0"
+		lr="0" color="#FFFFFFFF" image_id="2" bullet_image_id="0" magazine_image_id="0" snd_reload="we_shotgunpa_reload"
+		snd_fire="we_shotgunpa_fire" snd_dryfire="762arifle_dryfire" desc="Training Time"
+		effect_id="7" />
 	<!-- RIFLE : Magazine = 5 ea //////////////////////////////////////////////////////////////////////////-->
 	<ITEM id="7001" name="STR:ZITEM_NAME_7001" mesh_name="rifle03" totalpoint="0" type="range"
 		res_sex="a" res_level="5" slot="range" weapon="rifle" weight="15" bt_price="400" delay="120"
