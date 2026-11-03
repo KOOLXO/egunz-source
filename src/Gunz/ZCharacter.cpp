@@ -437,12 +437,12 @@ void ZCharacter::UpdateLoadAnimation()
 void ZCharacter::UpdateMotion(float fDelta)
 {
 	if (m_bInitialized == false) return;
-	// Á¡ÇÁ·Î ¸ğ¼Ç ¹Ù²Ù±â - ÀÌÀü»óÅÂ ¹é¾÷
-	// Á¡ÇÁ´Â ¾î¶² »óÅÂ¿¡¼­µç ¸ğ¼ÇÀÌ¹Ù²ğ¼öÀÖÀ¸¹Ç·Î..
+	// ì í”„ë¡œ ëª¨ì…˜ ë°”ê¾¸ê¸° - ì´ì „ìƒíƒœ ë°±ì—…
+	// ì í”„ëŠ” ì–´ë–¤ ìƒíƒœì—ì„œë“  ëª¨ì…˜ì´ë°”ë€”ìˆ˜ìˆìœ¼ë¯€ë¡œ..
 	// run , idle
 
-	// ÀÚ½ÅÀÇ Å¸°Ù¹æÇâ¿¡ Ä³¸¯ÅÍÀÇ ¹æÇâÀ» ¸ÂÃá´Ù..
-	if (IsDead()) { //Çã¸® º¯Çü ¾ø´Ù~
+	// ìì‹ ì˜ íƒ€ê²Ÿë°©í–¥ì— ìºë¦­í„°ì˜ ë°©í–¥ì„ ë§ì¶˜ë‹¤..
+	if (IsDead()) { //í—ˆë¦¬ ë³€í˜• ì—†ë‹¤~
 
 		m_pVMesh->m_vRotXYZ.x = 0.f;
 		m_pVMesh->m_vRotXYZ.y = 0.f;
@@ -476,7 +476,7 @@ void ZCharacter::UpdateMotion(float fDelta)
 			bInversed = true;
 		}
 
-		// fAngleLower ´Â ÇöÀç ¹ß¹æÇâ°ú ÇØ¾ßÇÏ´Â ¹ß¹æÇâÀÇ °¢µµ Â÷ÀÌ
+		// fAngleLower ëŠ” í˜„ì¬ ë°œë°©í–¥ê³¼ í•´ì•¼í•˜ëŠ” ë°œë°©í–¥ì˜ ê°ë„ ì°¨ì´
 		float fAngleLower = GetAngleOfVectors(dir, m_DirectionLower);
 
 		rmatrix mat;
@@ -490,17 +490,17 @@ void ZCharacter::UpdateMotion(float fDelta)
 			m_DirectionLower = m_DirectionLower * mat;
 		}
 
-		// ÀÏÁ¤°¢µµ ÀÌ»óµÇ¸é ÇÏÃ¼¸¦ Æ²¾îÁØ´Ù
+		// ì¼ì •ê°ë„ ì´ìƒë˜ë©´ í•˜ì²´ë¥¼ í‹€ì–´ì¤€ë‹¤
 		if (fAngleLower > 5.f / 180.f * PI_FLOAT)
 		{
 			mat = RGetRotZRad(max(-ROTATION_SPEED * fDelta / 180.f * PI_FLOAT, -fAngleLower));
 			m_DirectionLower = m_DirectionLower * mat;
 		}
 
-		// »óÃ¼°¡ ÇâÇØ¾ß ÇÏ´Â ¹æÇâÀº ¾ğÁ¦³ª Å¸°Ù¹æÇâ
+		// ìƒì²´ê°€ í–¥í•´ì•¼ í•˜ëŠ” ë°©í–¥ì€ ì–¸ì œë‚˜ íƒ€ê²Ÿë°©í–¥
 		float fAngle = GetAngleOfVectors(m_TargetDir, m_DirectionLower);
 
-		// ±×·¯³ª ÇÏÃ¼¿ÍÀÇ °¢µµ¸¦ Ç×»ó ÀÏÁ¤°¢µµ ÀÌÇÏ·Î À¯ÁöÇÑ´Ù.
+		// ê·¸ëŸ¬ë‚˜ í•˜ì²´ì™€ì˜ ê°ë„ë¥¼ í•­ìƒ ì¼ì •ê°ë„ ì´í•˜ë¡œ ìœ ì§€í•œë‹¤.
 
 		if (fAngle < -65.f / 180.f * PI_FLOAT)
 		{
@@ -518,10 +518,10 @@ void ZCharacter::UpdateMotion(float fDelta)
 
 		m_pVMesh->m_vRotXYZ.x = -fAngle * 180 / PI_FLOAT * .9f;
 
-		// ½ÇÁ¦º¸´Ù ¾à°£ °í°³¸¦ µé¾îÁØ´Ù :)
+		// ì‹¤ì œë³´ë‹¤ ì•½ê°„ ê³ ê°œë¥¼ ë“¤ì–´ì¤€ë‹¤ :)
 		m_pVMesh->m_vRotXYZ.y = (m_TargetDir.z + 0.05f) * 50.f;
 	}
-	else // ´Ş¸®±â/°¡¸¸ÀÖ±âµîÀÇ ¾Ö´Ï¸ŞÀÌ¼ÇÀÌ ¾Æ´Ï¸é Çã¸®¾Èµ¹¸°´Ù.
+	else // ë‹¬ë¦¬ê¸°/ê°€ë§Œìˆê¸°ë“±ì˜ ì• ë‹ˆë©”ì´ì…˜ì´ ì•„ë‹ˆë©´ í—ˆë¦¬ì•ˆëŒë¦°ë‹¤.
 	{
 		m_Direction = m_TargetDir;
 		m_DirectionLower = m_Direction;
@@ -1171,6 +1171,9 @@ void ZCharacter::OnUpdate(float fDelta)
 
 void ZCharacter::CheckLostConn()
 {
+	// Training bots are controlled locally or by their owner, not a live peer connection.
+	if (IsBot) return;
+
 	if (g_pGame->GetTime()-m_fLastReceivedTime > 1.f)
 	{
 		if(!m_bLostConEffect)
@@ -1218,7 +1221,7 @@ void ZCharacter::UpdateVelocity(float fDelta)
 		forward.z=0;
 		Normalize(forward);
 
-		// ÃÖ´ë°ªÀ» ºñÀ²·Î Á¦¾îÇÑ´Ù.
+		// ìµœëŒ€ê°’ì„ ë¹„ìœ¨ë¡œ ì œì–´í•œë‹¤.
 		float run_speed = RUN_SPEED * fRatio;
 		float back_speed = BACK_SPEED * fRatio;
 		float stop_formax_speed = STOP_FORMAX_SPEED * (1/fRatio);  
@@ -1593,7 +1596,7 @@ void ZCharacter::UpdateSound()
 		if(m_nWhichFootSound!=nCurrFoot && pMaterial) {	
 			if(m_nWhichFootSound==0)
 			{	
-				// ¿Ş¹ß
+				// ì™¼ë°œ
 				rvector pos = m_pVMesh->GetLFootPosition();
 				char *szSndName=g_pGame->GetSndNameFromBsp("man_fs_l", pMaterial);
 
@@ -1876,7 +1879,7 @@ void ZCharacter::OutputDebugString_CharacterState()
 
 	ZItem* pItem = m_Items.GetSelectedWeapon();
 
-	// ¼±ÅÃµÈ ¹«±â
+	// ì„ íƒëœ ë¬´ê¸°
 #define IF_SITEM_ENUM(a)		if(a==m_Items.GetSelectedWeaponType())		{ AddTextEnum(m_Items.GetSelectedWeaponType(),a); }
 #define ELSE_IF_SITEM_ENUM(a)	else if(a==m_Items.GetSelectedWeaponType())	{ AddTextEnum(m_Items.GetSelectedWeaponType(),a); }
 
@@ -2127,13 +2130,13 @@ void ZCharacter::InitMesh()
 	pMesh = ZGetMeshMgr()->Get(szMeshName);
 
 	if(!pMesh) {
-		mlog("AddCharacter ¿øÇÏ´Â ¸ğµ¨À» Ã£À»¼ö ¾øÀ½\n");
+		mlog("AddCharacter ì›í•˜ëŠ” ëª¨ë¸ì„ ì°¾ì„ìˆ˜ ì—†ìŒ\n");
 	}
 
 	int nVMID = g_pGame->m_VisualMeshMgr.Add(pMesh);
 
 	if(nVMID==-1) {
-		mlog("AddCharacter Ä³¸¯ÅÍ »ı¼º ½ÇÆĞ\n");
+		mlog("AddCharacter ìºë¦­í„° ìƒì„± ì‹¤íŒ¨\n");
 	}
 
 	m_nVMID = nVMID;
@@ -2402,8 +2405,8 @@ void ZCharacter::ChangeWeapon(MMatchCharItemParts nParts)
 
 	if (pSelectedItemDesc==NULL) {
 		m_Items.SelectWeapon(BackupParts);
-		mlog("¼±ÅÃµÈ ¹«±âÀÇ µ¥ÀÌÅÍ°¡ ¾ø´Ù.\n");
-		mlog("ZCharacter ¹«±â»óÅÂ¿Í RVisualMesh ÀÇ ¹«±â»óÅÂ°¡ Æ²·ÁÁ³´Ù\n");
+		mlog("ì„ íƒëœ ë¬´ê¸°ì˜ ë°ì´í„°ê°€ ì—†ë‹¤.\n");
+		mlog("ZCharacter ë¬´ê¸°ìƒíƒœì™€ RVisualMesh ì˜ ë¬´ê¸°ìƒíƒœê°€ í‹€ë ¤ì¡Œë‹¤\n");
 		return;
 	}
 
@@ -2434,11 +2437,11 @@ bool ZCharacter::CheckValidShotTime(int nItemID, float fTime, ZItem* pItem)
 			if ( (MWT_DAGGER <= nWeaponType && nWeaponType <= MWT_DOUBLE_KATANA) &&
 				(fTime - GetLastShotTime() >= 0.23f) ) 
 			{
-				// continue Valid... (Ä®Áú Á¤È®ÇÑ ½Ã°£ÃøÁ¤ÀÌ ¾î·Á¿ö ¸ÅÁ÷³Ñ¹ö»ç¿ë.
+				// continue Valid... (ì¹¼ì§ˆ ì •í™•í•œ ì‹œê°„ì¸¡ì •ì´ ì–´ë ¤ì›Œ ë§¤ì§ë„˜ë²„ì‚¬ìš©.
 			} else if ( (nWeaponType==MWT_DOUBLE_KATANA || nWeaponType==MWT_DUAL_DAGGER) &&
 				(fTime - GetLastShotTime() >= 0.11f) ) 
 			{
-				// continue Valid... (Ä®Áú Á¤È®ÇÑ ½Ã°£ÃøÁ¤ÀÌ ¾î·Á¿ö ¸ÅÁ÷³Ñ¹ö»ç¿ë.
+				// continue Valid... (ì¹¼ì§ˆ ì •í™•í•œ ì‹œê°„ì¸¡ì •ì´ ì–´ë ¤ì›Œ ë§¤ì§ë„˜ë²„ì‚¬ìš©.
 			} else {
 #ifdef _CHECKVALIDSHOTLOG
 				sprintf_safe(szLog, "IGNORE>> [%s] (%u:%u) Interval(%0.2f) Delay(%0.2f) \n", 
