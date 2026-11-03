@@ -330,20 +330,32 @@ void ZMyBotCharacter::OnUpdate(float Delta)
 	}
 	else
 	{
-		ZCharacter::OnUpdate(Delta);
+		// A local bot has no incoming peer packets. Keep its timestamp current so
+		// the inherited disconnected-peer check does not clear hit velocity.
+		UpdateTimeOffset(g_pGame->GetTime(), g_pGame->GetTime());
 
-		auto NowTime = GetGlobalTimeMS();
-		if (NowTime - LastBasicInfoSendTimeMS >= BASICINFO_INTERVAL)
+		// Unlike a remote character, the training bot must simulate its own hit motion.
+		UpdateVelocity(Delta);
+		m_pModule_Movable->OnUpdate(Delta);
+
+		if (GetDistToFloor() > 0.1f || GetVelocity().z > 0.1f)
 		{
-			LastBasicInfoSendTimeMS = NowTime;
-
-			PostBasicInfo();
+			m_pModule_Movable->UpdateGravity((m_bBlastFall ? 0.7f : 1.f) * Delta);
+			m_bLand = false;
+		}
+		else
+		{
+			m_bLand = true;
+			if (GetVelocity().z < 0.f)
+				SetVelocity(GetVelocity().x, GetVelocity().y, 0.f);
 		}
 
-		CheckDead();
-
-		UpdateAnimation();
-		UpdateVelocity(Delta);
+		UpdateHeight(Delta);
+		if (m_bBlastFall && m_bLand)
+		{
+			m_bBlastFall = false;
+			m_bBlastDrop = true;
+		}
 
 		if (GetDistToFloor() < 0 && !IsDead())
 		{
@@ -351,13 +363,85 @@ void ZMyBotCharacter::OnUpdate(float Delta)
 			rvector diff = rvector(0, 0, min(-GetDistToFloor(), fAdjust));
 			Move(diff);
 		}
+
+		UpdateAnimation();
+		ZCharacter::OnUpdate(Delta);
+
+		// Keep one-shot reactions alive until their animation finishes.
+		if (m_pVMesh)
+		{
+			auto* Lower = m_pVMesh->GetFrameInfo(ani_mode_lower);
+			if (Lower && Lower->m_isPlayDone)
+			{
+				if (m_bStun && m_nStunType != ZST_LOOP)
+					m_bStun = false;
+				else if (m_bBlast)
+				{
+					m_bBlast = false;
+					m_bBlastFall = true;
+				}
+				else if (m_bBlastDrop)
+				{
+					m_bBlastDrop = false;
+					m_bBlastStand = true;
+				}
+				else if (m_bBlastStand)
+					m_bBlastStand = false;
+			}
+		}
+
+		auto NowTime = GetGlobalTimeMS();
+		if (NowTime - LastBasicInfoSendTimeMS >= BASICINFO_INTERVAL)
+		{
+			LastBasicInfoSendTimeMS = NowTime;
+			PostBasicInfo();
+		}
+
+		CheckDead();
 	}
+}
+
+void ZMyBotCharacter::UpdateAnimation()
+{
+	if (!m_bInitialized) return;
+
+	if (m_bStun)
+	{
+		switch (m_nStunType)
+		{
+		case ZST_DAMAGE1: SetAnimationLower(ZC_STATE_DAMAGE); break;
+		case ZST_DAMAGE2: SetAnimationLower(ZC_STATE_DAMAGE2); break;
+		case ZST_SLASH: SetAnimationLower(ZC_STATE_DAMAGE_DOWN); break;
+		case ZST_BLOCKED: SetAnimationLower(ZC_STATE_DAMAGE_BLOCKED); break;
+		case ZST_LIGHTNING: SetAnimationLower(ZC_STATE_DAMAGE_LIGHTNING); break;
+		case ZST_LOOP: SetAnimationLower(ZC_STATE_DAMAGE_STUN); break;
+		}
+	}
+	else if (m_bBlast)
+		SetAnimationLower(ZC_STATE_LOWER_BLAST);
+	else if (m_bBlastFall)
+		SetAnimationLower(ZC_STATE_LOWER_BLAST_FALL);
+	else if (m_bBlastDrop)
+		SetAnimationLower(ZC_STATE_LOWER_BLAST_DROP);
+	else if (m_bBlastStand)
+		SetAnimationLower(ZC_STATE_LOWER_BLAST_STAND);
+	else
+		ZCharacter::UpdateAnimation();
 }
 
 bool ZMyBotCharacter::GetHistory(v3* Pos, v3* Dir, float Time, v3* CameraDir)
 {
 	if (State != BotStateType::Replaying)
 	{
+		// Newly spawned local bots have no received basic-info history.
+		// Return the live position so the first melee swing can hit immediately.
+		if (BasicInfoHistory.empty())
+		{
+			if (Pos) *Pos = GetPosition();
+			if (Dir) *Dir = GetDirection();
+			if (CameraDir) *CameraDir = GetDirection();
+			return true;
+		}
 		return ZCharacter::GetHistory(Pos, Dir, Time, CameraDir);
 	}
 
@@ -376,10 +460,9 @@ bool ZMyBotCharacter::GetHistory(v3* Pos, v3* Dir, float Time, v3* CameraDir)
 void ZMyBotCharacter::OnDamaged(ZObject* pAttacker, rvector srcPos, ZDAMAGETYPE damageType,
 	MMatchWeaponType weaponType, float fDamage, float fPiercingRatio, int nMeleeType)
 {
-	if (!GetBotInfo().Settings.Godmode)
-	{
-		HandleDamage(pAttacker, srcPos, damageType, weaponType, fDamage, fPiercingRatio, nMeleeType);
-	}
+	// Godmode prevents HP loss, not the ordinary melee hit reaction.
+	HandleDamage(pAttacker, srcPos, damageType, weaponType,
+		GetBotInfo().Settings.Godmode ? 0.f : fDamage, fPiercingRatio, nMeleeType);
 }
 
 void ZMyBotCharacter::OnDamagedAnimation(ZObject *pAttacker, int type)
@@ -394,8 +477,24 @@ void ZMyBotCharacter::OnKnockback(const rvector& dir, float fForce)
 {
 	if (!GetBotInfo().Settings.NoStuns)
 	{
-		ZCharacter::OnKnockback(dir, fForce);
+		// ZCharacter::OnKnockback only moves the hero, which a bot is not.
+		ZCharacterObject::OnKnockback(dir, fForce);
 	}
+}
+
+void ZMyBotCharacter::OnBlast(rvector& dir)
+{
+	if (GetBotInfo().Settings.NoStuns || isInvincible() ||
+		m_bBlast || m_bBlastFall || m_bBlastDrop || m_bBlastStand)
+		return;
+
+	m_bStun = false;
+	m_bBlast = true;
+	m_nBlastType = 0;
+	m_bLand = false;
+
+	// Match the existing sword-flip launch used by ZMyCharacter.
+	SetVelocity(dir * 300.f + rvector(0, 0, 1700.f));
 }
 
 static bool ShouldRecord(MCommand* Command)
